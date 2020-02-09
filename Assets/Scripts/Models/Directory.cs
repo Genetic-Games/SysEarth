@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
 
-namespace Assets.Scripts.Models
+namespace SysEarth.Models
 {
     public class Directory
     {
         public string Name { get; set; }
+
+        public Directory ParentDirectory { get; set; }
 
         public IList<File> FilesInDirectory { get; set; }
 

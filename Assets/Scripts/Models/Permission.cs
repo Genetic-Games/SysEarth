@@ -1,4 +1,4 @@
-﻿namespace Assets.Scripts.Models
+﻿namespace SysEarth.Models
 {
     public class Permission
     {

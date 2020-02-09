@@ -1,10 +1,12 @@
-﻿namespace Assets.Scripts.Models
+﻿using SysEarth.Enums;
+
+namespace SysEarth.Models
 {
     public class File
     {
         public string Name { get; set; }
 
-        public string Extension { get; set; }
+        public FileExtension Extension { get; set; }
 
         public Permission Access { get; set; }
     }
