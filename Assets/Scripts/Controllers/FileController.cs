@@ -18,7 +18,7 @@ namespace SysEarth.Controllers
 
             // Cannot get file that does not exist
             var filesInDirectory = GetFilesInDirectory(current);
-            if (filesInDirectory != null && filesInDirectory.Any(x => x.Name == fileName && x.Extension == extension))
+            if (filesInDirectory == null || !filesInDirectory.Any(x => x.Name == fileName && x.Extension == extension))
             {
                 return false;
             }
@@ -38,6 +38,13 @@ namespace SysEarth.Controllers
                 return false;
             }
 
+            // If file list does not exist yet, initialize it
+            if (filesInDirectory == null)
+            {
+                filesInDirectory = new List<File>();
+                current.FilesInDirectory = filesInDirectory;
+            }
+
             // Add the target file
             target = new File
             {
@@ -46,7 +53,7 @@ namespace SysEarth.Controllers
                 Name = fileName
             };
             filesInDirectory.Add(target);
-            return false;
+            return true;
         }
 
         public bool TryDeleteFile(string fileName, FileExtension extension, Directory current)

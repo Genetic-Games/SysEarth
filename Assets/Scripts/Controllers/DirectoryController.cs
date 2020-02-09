@@ -43,6 +43,13 @@ namespace SysEarth.Controllers
                 return false;
             }
 
+            // If subdirectory list does not exist yet, initialize it
+            if (subDirectories == null)
+            {
+                subDirectories = new List<Directory>();
+                current.SubDirectories = subDirectories;
+            }
+
             // Add the target directory
             target = new Directory
             {
