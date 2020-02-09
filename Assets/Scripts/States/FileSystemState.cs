@@ -1,36 +1,47 @@
-﻿using Assets.Scripts.Models;
+﻿using SysEarth.Controllers;
+using SysEarth.Models;
 
-namespace Assets.Scripts.States
+namespace SysEarth.States
 {
     public class FileSystemState
     {
         private Directory _currentDirectory;
         private Directory _rootDirectory;
 
-        public FileSystemState()
+        public FileSystemState(Permission rootAccess = null)
         {
-            _rootDirectory = new Directory();
+            if (rootAccess == null)
+            {
+                var permissionController = new PermissionController();
+                rootAccess = permissionController.GetCustomPermission(canRead: true, canExecute: true);
+            }
+
+            _rootDirectory = new Directory
+            {
+                Access = rootAccess
+            };
             _currentDirectory = _rootDirectory;
         }
 
-        public void ChangeCurrentDirectory(Directory target)
+        public Directory GetRootDirectory()
         {
-            _currentDirectory = target;
+            return _rootDirectory;
         }
 
-        public Directory GetCurrentDirectory(Directory target)
+        public Directory GetCurrentDirectory()
         {
             return _currentDirectory;
         }
 
-        public Permission GetFilePermissions(File target)
+        public bool TrySetCurrentDirectory(Directory target)
         {
-            return target.Access;
-        }
+            if (target == null)
+            {
+                return false;
+            }
 
-        public void SetFilePermissions(File targetFile, Permission targetAccess)
-        {
-            targetFile.Access = targetAccess;
+            _currentDirectory = target;
+            return true;
         }
     }
 }
