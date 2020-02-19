@@ -1,29 +1,28 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
+using System.Linq;
 
 namespace SysEarth.States
 {
     public class TerminalState
     {
-        [SerializeField]
-        private int inputHistoryLimit;
-
-        [SerializeField]
-        private int inputLengthLimit;
-
-        // TODO - Constructor needed here for default limit values?  Particularly for testing?
-
+        private int _inputHistoryLimit;
+        private int _inputLengthLimit;
         private string _currentTerminalInput;
-        private IList<string> _previousTerminalInputs = new List<string>();
+        private IList<string> _previousTerminalInputs;
 
-        public void SetInputHistoryLimit(int limitValue)
+        public TerminalState()
         {
-            inputHistoryLimit = limitValue;
+            _previousTerminalInputs = new List<string>();
         }
 
-        public void SetInputLengthLimit(int limitValue)
+        public int GetInputHistoryLimit()
         {
-            inputLengthLimit = limitValue;
+            return _inputHistoryLimit;
+        }
+
+        public int GetInputLengthLimit()
+        {
+            return _inputLengthLimit;
         }
 
         public string GetCurrentInput()
@@ -31,30 +30,106 @@ namespace SysEarth.States
             return _currentTerminalInput;
         }
 
-        public void SetCurrentInput(string input)
-        {
-            if (input.Length > inputLengthLimit)
-            {
-                _currentTerminalInput = input.Substring(0, inputLengthLimit);
-            }
-
-            _currentTerminalInput = input;
-        }
-
-        public void AddHistoricalInput(string input)
-        {
-            _previousTerminalInputs.Add(input);
-
-            if (_previousTerminalInputs.Count > inputHistoryLimit)
-            {
-                // Remove the oldest inserted element
-                _previousTerminalInputs.RemoveAt(0);
-            }
-        }
-
         public IList<string> GetPreviousTerminalInputs()
         {
             return _previousTerminalInputs;
+        }
+
+        public bool TrySetInputHistoryLimit(int limitValue)
+        {
+            if (limitValue <= 0)
+            {
+                return false;
+            }
+
+            _inputHistoryLimit = limitValue;
+            return true;
+        }
+
+        public bool TrySetInputLengthLimit(int limitValue)
+        {
+            if (limitValue <= 0)
+            {
+                return false;
+            }
+
+            _inputLengthLimit = limitValue;
+            return true;
+        }
+
+        public bool TrySetCurrentInput(string input)
+        {
+            if (string.IsNullOrEmpty(input) || input.Length > GetInputLengthLimit())
+            {
+                return false;
+            }
+
+            _currentTerminalInput = input;
+            return true;
+        }
+
+        public void ClearCurrentInput()
+        {
+            _currentTerminalInput = null;
+        }
+
+        public void ClearPreviousInputs()
+        {
+            _previousTerminalInputs.Clear();
+        }
+
+        public bool TryValidateInput(string input, out string validInput)
+        {
+            validInput = null;
+            if (string.IsNullOrEmpty(input) || input.Length > GetInputLengthLimit())
+            {
+                return false;
+            }
+
+            validInput = input;
+            return true;
+        }
+
+        public bool TryTruncateInput(string input, out string truncatedInput)
+        {
+            truncatedInput = null;
+            if (string.IsNullOrEmpty(input))
+            {
+                return false;
+            }
+
+            if (input.Length > GetInputLengthLimit())
+            {
+                truncatedInput = input.Substring(0, GetInputLengthLimit());
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool TryAddHistoricalInput(string input)
+        {
+            if (string.IsNullOrEmpty(input) || _previousTerminalInputs.Count == GetInputHistoryLimit())
+            {
+                return false;
+            }
+
+            _previousTerminalInputs.Add(input);
+            return true;
+        }
+
+        public bool TryRemoveOldestHistoricalInput()
+        {
+            // Only remove if we are at the limit
+            if (_previousTerminalInputs.Count < GetInputHistoryLimit())
+            {
+                return false;
+            }
+
+            // Remove the oldest inserted element
+            var oldestInput = _previousTerminalInputs.FirstOrDefault();
+            _previousTerminalInputs.Remove(oldestInput);
+            return true;
         }
     }
 }
