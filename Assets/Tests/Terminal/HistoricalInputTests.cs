@@ -29,7 +29,7 @@ namespace SysEarth.Tests.Terminal
             Assert.IsTrue(isAddHistoricalInputSuccess);
             Assert.IsNotNull(previousInputs);
             Assert.IsNotEmpty(previousInputs);
-            Assert.Contains(expected, (ICollection) previousInputs);
+            Assert.That(previousInputs.Contains(expected));
         }
 
         [Test]
@@ -68,7 +68,7 @@ namespace SysEarth.Tests.Terminal
             Assert.IsTrue(isHistoryLimitSet);
             Assert.IsTrue(isUnderLimitAddHistoricalInputSuccess);
             Assert.IsFalse(isOverLimitAddHistoricalInputSuccess);
-            Assert.Contains(underLimitInput, (ICollection) previousInputs);
+            Assert.That(previousInputs.Contains(underLimitInput));
             Assert.IsFalse(previousInputs.Contains(overLimitInput));
         }
 
@@ -102,7 +102,7 @@ namespace SysEarth.Tests.Terminal
             Assert.IsTrue(isHistoryLimitSet);
             Assert.IsTrue(isAddSuccess);
             Assert.IsFalse(isRemoveSuccess);
-            Assert.Contains(expected, (ICollection) previousInputs);
+            Assert.That(previousInputs.Contains(expected));
             Assert.IsNotEmpty(previousInputs);
         }
 

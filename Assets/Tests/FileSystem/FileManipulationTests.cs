@@ -49,7 +49,7 @@ namespace SysEarth.Tests.FileSystem
             Assert.IsTrue(isAddFileSuccess);
             Assert.IsNull(before);
             Assert.IsNotNull(after);
-            Assert.Contains(testFile, (ICollection) after);
+            Assert.That(after.Contains(testFile));
         }
 
         [Test]

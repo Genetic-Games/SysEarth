@@ -46,7 +46,7 @@ namespace SysEarth.Tests.FileSystem
             Assert.IsTrue(isAddDirectorySuccess);
             Assert.IsNull(before);
             Assert.IsNotNull(after);
-            Assert.Contains(testDirectory, (ICollection) after);
+            Assert.That(after.Contains(testDirectory));
         }
 
         [Test]

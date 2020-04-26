@@ -76,7 +76,7 @@ namespace SysEarth.Tests.Commands
             Assert.IsTrue(isAddCommandSuccess);
             Assert.IsNotNull(availableCommands);
             Assert.IsNotEmpty(availableCommands);
-            Assert.Contains(_commandName, (ICollection) availableCommands);
+            Assert.That(availableCommands.Contains(_commandName));
         }
 
         [Test]
