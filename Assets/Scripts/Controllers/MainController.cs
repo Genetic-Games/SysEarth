@@ -8,6 +8,7 @@ namespace SysEarth.Controllers
         // States
         private FileSystemState _fileSystemState;
         private TerminalState _terminalState;
+        private CommandState _commandState;
 
         // Controllers
         private DirectoryController _directoryController;
@@ -19,6 +20,7 @@ namespace SysEarth.Controllers
         {
             _fileSystemState = new FileSystemState();
             _terminalState = new TerminalState();
+            _commandState = new CommandState();
 
             _directoryController = new DirectoryController();
             _fileController = new FileController();
