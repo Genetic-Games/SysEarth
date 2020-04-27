@@ -1,7 +1,6 @@
 ﻿using NUnit.Framework;
 using SysEarth.Commands;
 using SysEarth.States;
-using System.Collections;
 
 namespace SysEarth.Tests.Commands
 {
@@ -61,9 +60,20 @@ namespace SysEarth.Tests.Commands
         public void CanAddNewAvailableCommand()
         {
             var commandState = new CommandState();
-            var isAddCommandSuccess = commandState.TryAddAvailableCommand(_commandName, new TestCommand());
+            var isAddCommandSuccess = commandState.TryAddAvailableCommand(_commandName, _command);
 
             Assert.IsTrue(isAddCommandSuccess);
+        }
+
+        [Test]
+        public void CannotAddAlreadyExistingCommand()
+        {
+            var commandState = new CommandState();
+            var isAddCommandSuccess = commandState.TryAddAvailableCommand(_commandName, _command);
+            var isAddSameCommandAgainSuccess = commandState.TryAddAvailableCommand(_commandName, _command);
+
+            Assert.IsTrue(isAddCommandSuccess);
+            Assert.IsFalse(isAddSameCommandAgainSuccess);
         }
 
         [Test]

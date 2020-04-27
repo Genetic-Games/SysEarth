@@ -1,6 +1,5 @@
 ﻿using NUnit.Framework;
 using SysEarth.States;
-using System.Collections;
 
 namespace SysEarth.Tests.Terminal
 {
