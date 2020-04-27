@@ -61,25 +61,31 @@ namespace SysEarth.Controllers
             var userSubmittedInput = terminalState.GetCurrentInput();
             Debug.Log("User input submitted:" + userSubmittedInput);
 
+            var isValidInput = terminalState.TryValidateInput(userSubmittedInput, out var validSubmittedInput);
+
             // TODO - Do something with the input here
             // TODO - Parse the input and then see if it matches any existing commands in the command state, validate, then execute that command
             // TODO - Might actually be better just to store / return the input somewhere, saying it's ready for parsing elsewhere
 
-            // Clear the user's input since it has been submitted
+            // Clear the user's input since it has been submitted, regardless of its validity
             terminalState.ClearCurrentInput();
             updatedInputText = string.Empty;
 
-            // Add the input to the list of historical inputs, removing old inputs as necessary
-            var isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(userSubmittedInput);
-            if (!isAddHistoricalInputSuccess && terminalState.TryRemoveOldestHistoricalInput())
+            // Add the input to the list of historical inputs if it is valid, removing old inputs as necessary
+            if (isValidInput)
             {
-                isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(userSubmittedInput);
-            }
+                var isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(validSubmittedInput);
+                if (!isAddHistoricalInputSuccess && terminalState.TryRemoveOldestHistoricalInput())
+                {
+                    isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(validSubmittedInput);
+                }
 
-            Debug.Assert(isAddHistoricalInputSuccess, "Failed to add historical input: " + userSubmittedInput);
+                Debug.Assert(isAddHistoricalInputSuccess, "Failed to add valid historical input: " + validSubmittedInput);
+            }
 
             // Show the previous terminal inputs to the user
             // TODO - Make this so that it shows previous terminal inputs and outputs associated
+            // TODO - Might make sense to do this action elsewhere, as a different part of the functionality in UserInterfaceController
             var previousTerminalInputs = terminalState.GetPreviousTerminalInputs();
             updatedOutputText = string.Join(_newLine, previousTerminalInputs);
         }
