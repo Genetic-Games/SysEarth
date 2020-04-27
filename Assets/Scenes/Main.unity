@@ -443,8 +443,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28f37e7ecc2a6a542ada3e80bb29bd70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  InputText: {fileID: 2073281005}
-  OutputText: {fileID: 2123362501}
+  InputTextObject: {fileID: 2073281005}
+  OutputTextObject: {fileID: 2123362501}
+  InputLengthCharacterLimit: 100
+  InputHistoryLimit: 10
 --- !u!4 &1567255753
 Transform:
   m_ObjectHideFlags: 0

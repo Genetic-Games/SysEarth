@@ -70,7 +70,7 @@ namespace SysEarth.States
 
         public void ClearCurrentInput()
         {
-            _currentTerminalInput = null;
+            _currentTerminalInput = string.Empty;
         }
 
         public void ClearPreviousInputs()

@@ -8,8 +8,8 @@ namespace SysEarth.Controllers
     public class MainController : MonoBehaviour
     {
         // Scene References
-        public Text InputText;
-        public Text OutputText;
+        public Text InputTextObject;
+        public Text OutputTextObject;
 
         // Input Variables
         public int InputLengthCharacterLimit = 100;
@@ -24,6 +24,7 @@ namespace SysEarth.Controllers
         private DirectoryController _directoryController;
         private FileController _fileController;
         private PermissionController _permissionController;
+        private UserInterfaceController _userInterfaceController;
 
         // Start is called before the first frame update
         public void Start()
@@ -32,16 +33,15 @@ namespace SysEarth.Controllers
             _terminalState = new TerminalState();
             _commandState = new CommandState();
 
-            InitializeTerminalState(_terminalState);
-
             _directoryController = new DirectoryController();
             _fileController = new FileController();
             _permissionController = new PermissionController();
+            _userInterfaceController = new UserInterfaceController();
 
-            AddInitialCommands(_commandState);
-
-            InitializeConsoleText(InputText); // TODO - Make this start with "> " for a visual prompt to the user
-            InitializeConsoleText(OutputText);
+            InitializeTerminalState(_terminalState);
+            InitializeCommandState(_commandState);
+            InitializeConsoleText(InputTextObject, isInputText: true);
+            InitializeConsoleText(OutputTextObject, isInputText: false);
         }
 
         private void InitializeTerminalState(TerminalState terminalState)
@@ -59,15 +59,15 @@ namespace SysEarth.Controllers
             Debug.Assert(isInputHistorySetSuccess, "Failed to set maximum input history limit.");
         }
 
-        private void InitializeConsoleText(Text consoleText)
+        private void InitializeConsoleText(Text consoleText, bool isInputText = false)
         {
             Debug.Assert(consoleText != null, "A console text object is not properly set.");
 
             // Ensure that the console text is empty to start
-            consoleText.text = string.Empty;
+            _userInterfaceController.SetUserInterfaceText(consoleText, string.Empty, isInputText);
         }
 
-        private void AddInitialCommands(CommandState commandState)
+        private void InitializeCommandState(CommandState commandState)
         {
             var helpCommand = new HelpCommand();
             var isAddCommandSuccess = commandState.TryAddAvailableCommand(helpCommand.GetCommandName(), helpCommand);
@@ -80,55 +80,10 @@ namespace SysEarth.Controllers
         // Update is called once per frame
         public void Update()
         {
-            // TODO - Move this to an input controller
-            foreach (char inputCharacter in Input.inputString)
-            {
-                if (inputCharacter == '\n' || inputCharacter == '\r') // Has enter or return been pressed?
-                {
-                    var userSubmittedInput = _terminalState.GetCurrentInput();
-                    Debug.Log("User input submitted:" + userSubmittedInput);
+            _userInterfaceController.HandleUserInput(Input.inputString, _terminalState, out var updatedInputText, out var updatedOutputText);
 
-                    // TODO - Do something with the input here
-                    // TODO - Parse the input and then see if it matches any existing commands in the command state, validate, then execute that command
-
-                    _terminalState.ClearCurrentInput();
-                    InputText.text = string.Empty;
-
-                    var isAddHistoricalInputSuccess = _terminalState.TryAddHistoricalInput(userSubmittedInput);
-                    if (!isAddHistoricalInputSuccess && _terminalState.TryRemoveOldestHistoricalInput())
-                    {
-                        isAddHistoricalInputSuccess = _terminalState.TryAddHistoricalInput(userSubmittedInput);
-                    }
-
-                    var previousTerminalInputs = _terminalState.GetPreviousTerminalInputs();
-                    OutputText.text = string.Join("\n", previousTerminalInputs);
-                }
-                else if (inputCharacter == '\b') // Has backspace or delete been pressed?
-                {
-                    var currentInput = _terminalState.GetCurrentInput();
-                    if (currentInput.Length != 0)
-                    {
-                        var updatedInput = currentInput.Substring(0, currentInput.Length - 1);
-                        var isDeleteCharacterSuccess = _terminalState.TrySetCurrentInput(updatedInput);
-
-                        if (isDeleteCharacterSuccess)
-                        {
-                            InputText.text = updatedInput;
-                        }
-                    }
-                }
-                else
-                {
-                    var currentInput = _terminalState.GetCurrentInput();
-                    var updatedInput = currentInput + inputCharacter;
-                    var isSetInputSuccess = _terminalState.TrySetCurrentInput(updatedInput);
-
-                    if (isSetInputSuccess)
-                    {
-                        InputText.text = updatedInput;
-                    }
-                }
-            }
+            _userInterfaceController.SetUserInterfaceText(InputTextObject, updatedInputText, isInputText: true);
+            _userInterfaceController.SetUserInterfaceText(OutputTextObject, updatedOutputText, isInputText: false);
         }
     }
 }

@@ -70,7 +70,8 @@ namespace SysEarth.Tests.Terminal
 
             Assert.IsTrue(isLengthLimitSet);
             Assert.IsTrue(isInputSet);
-            Assert.IsNull(actual);
+            Assert.IsNotNull(actual);
+            Assert.IsEmpty(actual);
         }
     }
 }
