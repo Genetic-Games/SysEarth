@@ -36,19 +36,6 @@ namespace SysEarth.Controllers
                     terminalState.ClearCurrentInput();
                     userInteraction.IsInputModified = true;
                     userInteraction.ModifiedInput = string.Empty;
-
-                    // Add the input to the list of historical inputs if it is a valid input (not empty, null, or over the character limit)
-                    // At this point, we know if the input is valid from the terminal perspective, but not if it maps to a valid command with valid parameters
-                    if (terminalState.TryValidateInput(userInteraction.SubmittedInput, out var validSubmittedInput))
-                    {
-                        var isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(validSubmittedInput);
-                        if (!isAddHistoricalInputSuccess && terminalState.TryRemoveOldestHistoricalInput())
-                        {
-                            isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(validSubmittedInput);
-                        }
-
-                        Debug.Assert(isAddHistoricalInputSuccess, $"Failed to add valid historical input: {validSubmittedInput}");
-                    }
                 }
 
                 // Case of backspace or delete bring pressed to delete some of user's input not yet submitted
