@@ -79,6 +79,7 @@ namespace SysEarth.States
             _previousTerminalCommands.Clear();
         }
 
+        // TODO - Add testing around this functionality
         public void HidePreviousCommands()
         {
             foreach (var previousTerminalCommand in _previousTerminalCommands)
