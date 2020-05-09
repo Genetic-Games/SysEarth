@@ -1,4 +1,5 @@
-﻿using SysEarth.States;
+﻿using SysEarth.Models;
+using SysEarth.States;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,20 +9,16 @@ namespace SysEarth.Controllers
     public class UserInterfaceController
     {
         private readonly IList<char> _submitCharacters = new List<char> { '\r', '\n' };
-
-        private readonly IList<char> _deleteCharacters = new List<char> { '\b' }; // TODO - This handles backspace, but not delete key
+        private readonly IList<char> _deleteCharacters = new List<char> { '\b' }; // Note - only backspace is supported by Input, delete is unsupported
 
         private const string _newLine = "\n";
-
-        private const string _inputPrompt = "> ";
+        private const string _userInputPrompt = "|> ";
 
         // TODO - Should also consider the case of up arrow and down arrow to go back to previous inputs
 
-        public void HandleUserInput(string inputString, TerminalState terminalState, out string updatedInputText, out string updatedOutputText)
+        public UserInteraction HandleUserInput(string inputString, TerminalState terminalState)
         {
-            // By default, treat updated input and output text as "null" if the text should not be updated
-            updatedInputText = null;
-            updatedOutputText = null;
+            var userInteraction = new UserInteraction();
 
             // Parse which characters the user's have pressed
             foreach (char inputCharacter in inputString)
@@ -29,50 +26,115 @@ namespace SysEarth.Controllers
                 // Case of enter or return being pressed to submit the user's input
                 if (_submitCharacters.Contains(inputCharacter))
                 {
-                    HandleSubmitInput(terminalState, out updatedInputText, out updatedOutputText);
+                    userInteraction.IsInputSubmitted = true;
+
+                    // Get the user's full input (not including enter or any prompt characters)
+                    userInteraction.SubmittedInput = terminalState.GetCurrentInput();
+                    Debug.Log($"User input submitted: {userInteraction.SubmittedInput}");
+
+                    // Clear the user's input since it has been submitted, regardless of its validity
+                    terminalState.ClearCurrentInput();
+                    userInteraction.IsInputModified = true;
+                    userInteraction.ModifiedInput = string.Empty;
+
+                    // Add the input to the list of historical inputs if it is a valid input (not empty, null, or over the character limit)
+                    // At this point, we know if the input is valid from the terminal perspective, but not if it maps to a valid command with valid parameters
+                    if (terminalState.TryValidateInput(userInteraction.SubmittedInput, out var validSubmittedInput))
+                    {
+                        var isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(validSubmittedInput);
+                        if (!isAddHistoricalInputSuccess && terminalState.TryRemoveOldestHistoricalInput())
+                        {
+                            isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(validSubmittedInput);
+                        }
+
+                        Debug.Assert(isAddHistoricalInputSuccess, $"Failed to add valid historical input: {validSubmittedInput}");
+                    }
                 }
 
                 // Case of backspace or delete bring pressed to delete some of user's input not yet submitted
                 else if (_deleteCharacters.Contains(inputCharacter))
                 {
-                    HandleDeleteInput(terminalState, out updatedInputText);
+                    var currentInput = terminalState.GetCurrentInput();
+
+                    // If the last character is being deleted, the state should be cleared differently
+                    if (currentInput.Length == 1)
+                    {
+                        terminalState.ClearCurrentInput();
+                        userInteraction.IsInputModified = true;
+                        userInteraction.ModifiedInput = string.Empty;
+                    }
+
+                    // Otherwise if there is more than one character, delete the last character
+                    else if (currentInput.Length != 0)
+                    {
+                        // If we have characters to delete, remove them and reflect that change back to the user
+                        var updatedInput = currentInput.Remove(currentInput.Length - 1);
+                        var isSetInputSuccess = terminalState.TrySetCurrentInput(updatedInput);
+
+                        if (isSetInputSuccess)
+                        {
+                            userInteraction.IsInputModified = true;
+                            userInteraction.ModifiedInput = updatedInput;
+                        }
+
+                        Debug.Assert(isSetInputSuccess, $"Failed to set current input: {updatedInput}");
+                    }
                 }
 
                 // Case of every other key, treated as the text of the key pressed
                 else
                 {
-                    HandleTextInput(inputCharacter, terminalState, out updatedInputText);
+                    var currentInput = terminalState.GetCurrentInput();
+                    var updatedInput = currentInput + inputCharacter;
+                    var isSetInputSuccess = terminalState.TrySetCurrentInput(updatedInput);
+
+                    if (isSetInputSuccess)
+                    {
+                        userInteraction.IsInputModified = true;
+                        userInteraction.ModifiedInput = updatedInput;
+                    }
+                    else
+                    {
+                        // We may be over the character limit, so check if the input is valid before asserting that it should have been set
+                        var isValidInput = terminalState.TryValidateInput(updatedInput, out var validInput);
+                        Debug.Assert(!isSetInputSuccess && !isValidInput, $"Failed to set current input with valid input: {validInput}");
+                    }
                 }
             }
+
+            return userInteraction;
         }
 
-        public void SetUserInterfaceText(Text textObject, string updatedText, bool isInputText = false)
+        public void SetUserInterfaceText(Text textObject, string updatedText, bool addPrompt = false)
         {
             // If the updated text is null, that signifies there should be no update for the text to the user
             if (updatedText != null)
             {
-                textObject.text = isInputText ? _inputPrompt + updatedText : updatedText;
+                textObject.text = addPrompt ? _userInputPrompt + updatedText : updatedText;
             }
+        }
+
+        private string GetUserInput(TerminalState terminalState)
+        {
+            // Get the user's full input (not including enter or any prompt characters)
+            var userSubmittedInput = terminalState.GetCurrentInput();
+            return userSubmittedInput;
         }
 
         private void HandleSubmitInput(TerminalState terminalState, out string updatedInputText, out string updatedOutputText)
         {
             // Get the user's full input (not including enter)
             var userSubmittedInput = terminalState.GetCurrentInput();
-            Debug.Log("User input submitted:" + userSubmittedInput);
-
-            var isValidInput = terminalState.TryValidateInput(userSubmittedInput, out var validSubmittedInput);
-
-            // TODO - Do something with the input here
-            // TODO - Parse the input and then see if it matches any existing commands in the command state, validate, then execute that command
-            // TODO - Might actually be better just to store / return the input somewhere, saying it's ready for parsing elsewhere
+            Debug.Log($"User input submitted: {userSubmittedInput}");
 
             // Clear the user's input since it has been submitted, regardless of its validity
+            // TODO - Move this elsewhere, it's breaking the single responsibility principle
             terminalState.ClearCurrentInput();
             updatedInputText = string.Empty;
 
-            // Add the input to the list of historical inputs if it is valid, removing old inputs as necessary
-            if (isValidInput)
+            // Add the input to the list of historical inputs if it is a valid input (not empty, null, or over the character limit)
+            // At this point, we know if the input is valid from the terminal perspective, but not if it maps to a valid command with valid parameters
+            if (terminalState.TryValidateInput(userSubmittedInput, out var validSubmittedInput))
             {
                 var isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(validSubmittedInput);
                 if (!isAddHistoricalInputSuccess && terminalState.TryRemoveOldestHistoricalInput())
@@ -80,7 +142,7 @@ namespace SysEarth.Controllers
                     isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(validSubmittedInput);
                 }
 
-                Debug.Assert(isAddHistoricalInputSuccess, "Failed to add valid historical input: " + validSubmittedInput);
+                Debug.Assert(isAddHistoricalInputSuccess, $"Failed to add valid historical input: {validSubmittedInput}");
             }
 
             // Show the previous terminal inputs to the user
@@ -116,7 +178,7 @@ namespace SysEarth.Controllers
                     updatedInputText = updatedInput;
                 }
 
-                Debug.Assert(isSetInputSuccess, "Failed to set current input: " + updatedInput);
+                Debug.Assert(isSetInputSuccess, $"Failed to set current input: {updatedInput}");
             }
         }
 
@@ -137,7 +199,7 @@ namespace SysEarth.Controllers
             { 
                 // We may be over the character limit, so check if the input is valid before asserting that it should have been set
                 var isValidInput = terminalState.TryValidateInput(updatedInput, out var validInput);
-                Debug.Assert(!isSetInputSuccess && !isValidInput, "Failed to set current input with valid input: " + validInput);
+                Debug.Assert(!isSetInputSuccess && !isValidInput, $"Failed to set current input with valid input: {validInput}");
             }
         }
     }

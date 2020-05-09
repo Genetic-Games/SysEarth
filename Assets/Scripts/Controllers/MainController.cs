@@ -80,10 +80,25 @@ namespace SysEarth.Controllers
         // Update is called once per frame
         public void Update()
         {
-            _userInterfaceController.HandleUserInput(Input.inputString, _terminalState, out var updatedInputText, out var updatedOutputText);
+            var userInteraction = _userInterfaceController.HandleUserInput(Input.inputString, _terminalState);
 
-            _userInterfaceController.SetUserInterfaceText(InputTextObject, updatedInputText, isInputText: true);
-            _userInterfaceController.SetUserInterfaceText(OutputTextObject, updatedOutputText, isInputText: false);
+            if (userInteraction.IsInputModified)
+            {
+                _userInterfaceController.SetUserInterfaceText(InputTextObject, userInteraction.ModifiedInput, addPrompt: true);
+            }
+
+            if (userInteraction.IsInputSubmitted)
+            {
+                // TODO - Parse the text of the submitted command here
+                // TODO - Validate the parsed command is a valid command
+                // TODO - Execute the command submitted here
+                // TODO - Indicate that the output is modified (if it is) and set the modified output here
+            }
+
+            if (userInteraction.IsOutputModified)
+            {
+                _userInterfaceController.SetUserInterfaceText(OutputTextObject, userInteraction.ModifiedOutput, addPrompt: false);
+            }
         }
     }
 }
