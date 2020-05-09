@@ -16,15 +16,15 @@ namespace SysEarth.Controllers
 
         // TODO - Should also consider the case of up arrow and down arrow to go back to previous inputs
 
-        public UserInteraction HandleUserInput(string inputString, TerminalState terminalState)
+        public UserInteraction GetUserInteraction(string userInputString, TerminalState terminalState)
         {
             var userInteraction = new UserInteraction();
 
             // Parse which characters the user's have pressed
-            foreach (char inputCharacter in inputString)
+            foreach (char userInputCharacter in userInputString)
             {
                 // Case of enter or return being pressed to submit the user's input
-                if (_submitCharacters.Contains(inputCharacter))
+                if (_submitCharacters.Contains(userInputCharacter))
                 {
                     userInteraction.IsInputSubmitted = true;
 
@@ -52,7 +52,7 @@ namespace SysEarth.Controllers
                 }
 
                 // Case of backspace or delete bring pressed to delete some of user's input not yet submitted
-                else if (_deleteCharacters.Contains(inputCharacter))
+                else if (_deleteCharacters.Contains(userInputCharacter))
                 {
                     var currentInput = terminalState.GetCurrentInput();
 
@@ -85,7 +85,7 @@ namespace SysEarth.Controllers
                 else
                 {
                     var currentInput = terminalState.GetCurrentInput();
-                    var updatedInput = currentInput + inputCharacter;
+                    var updatedInput = currentInput + userInputCharacter;
                     var isSetInputSuccess = terminalState.TrySetCurrentInput(updatedInput);
 
                     if (isSetInputSuccess)
@@ -114,12 +114,8 @@ namespace SysEarth.Controllers
             }
         }
 
-        private string GetUserInput(TerminalState terminalState)
-        {
-            // Get the user's full input (not including enter or any prompt characters)
-            var userSubmittedInput = terminalState.GetCurrentInput();
-            return userSubmittedInput;
-        }
+        // TODO - Leaving the below for reference, but only the output cases and execute cases are relevant now
+        // TODO - Convert below to properly handle output text cases and execute command cases where applicable
 
         private void HandleSubmitInput(TerminalState terminalState, out string updatedInputText, out string updatedOutputText)
         {

@@ -40,8 +40,8 @@ namespace SysEarth.Controllers
 
             InitializeTerminalState(_terminalState);
             InitializeCommandState(_commandState);
-            InitializeConsoleText(InputTextObject, isInputText: true);
-            InitializeConsoleText(OutputTextObject, isInputText: false);
+            InitializeConsoleText(InputTextObject, addPrompt: true);
+            InitializeConsoleText(OutputTextObject, addPrompt: false);
         }
 
         private void InitializeTerminalState(TerminalState terminalState)
@@ -59,12 +59,12 @@ namespace SysEarth.Controllers
             Debug.Assert(isInputHistorySetSuccess, "Failed to set maximum input history limit.");
         }
 
-        private void InitializeConsoleText(Text consoleText, bool isInputText = false)
+        private void InitializeConsoleText(Text consoleText, bool addPrompt = false)
         {
             Debug.Assert(consoleText != null, "A console text object is not properly set.");
 
             // Ensure that the console text is empty to start
-            _userInterfaceController.SetUserInterfaceText(consoleText, string.Empty, isInputText);
+            _userInterfaceController.SetUserInterfaceText(consoleText, string.Empty, addPrompt);
         }
 
         private void InitializeCommandState(CommandState commandState)
@@ -80,7 +80,7 @@ namespace SysEarth.Controllers
         // Update is called once per frame
         public void Update()
         {
-            var userInteraction = _userInterfaceController.HandleUserInput(Input.inputString, _terminalState);
+            var userInteraction = _userInterfaceController.GetUserInteraction(Input.inputString, _terminalState);
 
             if (userInteraction.IsInputModified)
             {
