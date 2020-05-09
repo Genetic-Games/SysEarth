@@ -1,6 +1,7 @@
 ﻿using SysEarth.Models;
 using SysEarth.States;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,11 +27,9 @@ namespace SysEarth.Controllers
                 // Case of enter or return being pressed to submit the user's input
                 if (_submitCharacters.Contains(userInputCharacter))
                 {
-                    userInteraction.IsInputSubmitted = true;
-
                     // Get the user's full input (not including enter or any prompt characters)
+                    userInteraction.IsInputSubmitted = true;
                     userInteraction.SubmittedInput = terminalState.GetCurrentInput();
-                    Debug.Log($"User input submitted: {userInteraction.SubmittedInput}");
 
                     // Clear the user's input since it has been submitted, regardless of its validity
                     terminalState.ClearCurrentInput();
@@ -99,6 +98,20 @@ namespace SysEarth.Controllers
             {
                 textObject.text = addPrompt ? _userInputPrompt + updatedText : updatedText;
             }
+        }
+
+        public string BuildUserInterfaceText(IList<TerminalCommand> terminalCommands)
+        {
+            var userInterfaceText = new StringBuilder();
+
+            foreach (var terminalCommand in terminalCommands)
+            {
+                userInterfaceText.AppendLine(_userInputPrompt + terminalCommand.TerminalCommandInput);
+                userInterfaceText.AppendLine(terminalCommand.TerminalCommandOutput);
+                userInterfaceText.AppendLine(); // Empty line for better readability between each pair of input and output
+            }
+
+            return userInterfaceText.ToString();
         }
 
         // TODO - Leaving the below for reference, but only the output cases and execute cases are relevant now

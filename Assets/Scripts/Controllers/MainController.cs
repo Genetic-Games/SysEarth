@@ -1,4 +1,5 @@
 ﻿using SysEarth.Commands;
+using SysEarth.Models;
 using SysEarth.States;
 using UnityEngine;
 using UnityEngine.UI;
@@ -92,6 +93,31 @@ namespace SysEarth.Controllers
                 // TODO - Parse the text of the submitted command here
                 Debug.Log($"User input submitted: {userInteraction.SubmittedInput}");
 
+                // TODO - This is temporary to work out process flow before text parsing is in place
+                if (userInteraction.SubmittedInput == "help")
+                {
+                    var availableCommands = _commandState.GetAvailableCommands();
+                    userInteraction.IsOutputModified = true;
+                    var userInteractionResponse = string.Join("\n", availableCommands);
+
+                    var terminalCommand = new TerminalCommand
+                    {
+                        TerminalCommandInput = userInteraction.SubmittedInput,
+                        TerminalCommandOutput = userInteractionResponse
+                    };
+
+                    if (_terminalState.TryValidateInput(userInteraction.SubmittedInput, out var validSubmittedInput))
+                    {
+                        var isAddHistoricalInputSuccess = _terminalState.TryAddHistoricalCommand(terminalCommand);
+                        if (!isAddHistoricalInputSuccess && _terminalState.TryRemoveOldestHistoricalCommand())
+                        {
+                            isAddHistoricalInputSuccess = _terminalState.TryAddHistoricalCommand(terminalCommand);
+                        }
+
+                        Debug.Assert(isAddHistoricalInputSuccess, $"Failed to add valid historical input: {validSubmittedInput} with output: {userInteractionResponse}");
+                    }
+                }
+
                 // TODO - Validate the parsed command is a valid command
 
                 // Add the input to the list of historical inputs if it is a valid input (not empty, null, or over the character limit)
@@ -114,6 +140,11 @@ namespace SysEarth.Controllers
 
             if (userInteraction.IsOutputModified)
             {
+                // If a command was submitted, it has already been added to the previous commands with relevant output
+                // We can construct full output to the user with the list of previous commands
+                var previousTerminalCommands = _terminalState.GetPreviousTerminalCommands();
+                userInteraction.ModifiedOutput = _userInterfaceController.BuildUserInterfaceText(previousTerminalCommands);
+
                 _userInterfaceController.SetUserInterfaceText(OutputTextObject, userInteraction.ModifiedOutput, addPrompt: false);
             }
         }
