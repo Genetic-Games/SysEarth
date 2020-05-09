@@ -9,7 +9,7 @@ namespace SysEarth.Tests.Terminal
         public void GetDefaultInputHistoryLimitTest()
         {
             var terminalState = new TerminalState();
-            var actual = terminalState.GetInputHistoryLimit();
+            var actual = terminalState.GetCommandHistoryLimit();
 
             Assert.IsNotNull(actual);
             Assert.AreEqual(actual, 0);
@@ -20,8 +20,8 @@ namespace SysEarth.Tests.Terminal
         {
             var terminalState = new TerminalState();
             var expected = 20;
-            var isLimitSet = terminalState.TrySetInputHistoryLimit(expected);
-            var actual = terminalState.GetInputHistoryLimit();
+            var isLimitSet = terminalState.TrySetCommandHistoryLimit(expected);
+            var actual = terminalState.GetCommandHistoryLimit();
 
             Assert.IsTrue(isLimitSet);
             Assert.AreEqual(expected, actual);
@@ -42,7 +42,7 @@ namespace SysEarth.Tests.Terminal
         {
             var terminalState = new TerminalState();
             var expected = 20;
-            var isLimitSet = terminalState.TrySetInputLengthLimit(expected);
+            var isLimitSet = terminalState.TrySetTerminalInputLengthLimit(expected);
             var actual = terminalState.GetInputLengthLimit();
 
             Assert.IsTrue(isLimitSet);

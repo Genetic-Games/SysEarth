@@ -47,13 +47,13 @@ namespace SysEarth.Controllers
         private void InitializeTerminalState(TerminalState terminalState)
         {
             terminalState.ClearCurrentInput();
-            terminalState.ClearPreviousInputs();
+            terminalState.ClearPreviousCommands();
 
             Debug.Assert(InputLengthCharacterLimit > 0, "Input length character limit is invalid.");
             Debug.Assert(InputHistoryLimit > 0, "Input history limit is invalid.");
 
-            var isInputLengthSetSuccess = terminalState.TrySetInputLengthLimit(InputLengthCharacterLimit);
-            var isInputHistorySetSuccess = terminalState.TrySetInputHistoryLimit(InputHistoryLimit);
+            var isInputLengthSetSuccess = terminalState.TrySetTerminalInputLengthLimit(InputLengthCharacterLimit);
+            var isInputHistorySetSuccess = terminalState.TrySetCommandHistoryLimit(InputHistoryLimit);
 
             Debug.Assert(isInputLengthSetSuccess, "Failed to set maximum input length.");
             Debug.Assert(isInputHistorySetSuccess, "Failed to set maximum input history limit.");
@@ -96,16 +96,16 @@ namespace SysEarth.Controllers
 
                 // Add the input to the list of historical inputs if it is a valid input (not empty, null, or over the character limit)
                 // At this point, we know if the input is valid from the terminal perspective, but not if it maps to a valid command with valid parameters
-                if (_terminalState.TryValidateInput(userInteraction.SubmittedInput, out var validSubmittedInput))
-                {
-                    var isAddHistoricalInputSuccess = _terminalState.TryAddHistoricalInput(validSubmittedInput);
-                    if (!isAddHistoricalInputSuccess && _terminalState.TryRemoveOldestHistoricalInput())
-                    {
-                        isAddHistoricalInputSuccess = _terminalState.TryAddHistoricalInput(validSubmittedInput);
-                    }
+                //if (_terminalState.TryValidateInput(userInteraction.SubmittedInput, out var validSubmittedInput))
+                //{
+                //    var isAddHistoricalInputSuccess = _terminalState.TryAddHistoricalCommand(validSubmittedInput);
+                //    if (!isAddHistoricalInputSuccess && _terminalState.TryRemoveOldestHistoricalInput())
+                //    {
+                //        isAddHistoricalInputSuccess = _terminalState.TryAddHistoricalCommand(validSubmittedInput);
+                //    }
 
-                    Debug.Assert(isAddHistoricalInputSuccess, $"Failed to add valid historical input: {validSubmittedInput}");
-                }
+                //    Debug.Assert(isAddHistoricalInputSuccess, $"Failed to add valid historical input: {validSubmittedInput}");
+                //}
 
                 // TODO - Continue to validate the command here actually against the list of commands available (syntax and all)
                 // TODO - Execute the command submitted here

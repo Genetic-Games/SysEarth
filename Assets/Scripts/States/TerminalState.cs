@@ -1,28 +1,29 @@
-﻿using System.Collections.Generic;
+﻿using SysEarth.Models;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace SysEarth.States
 {
     public class TerminalState
     {
-        private int _inputHistoryLimit;
-        private int _inputLengthLimit;
+        private int _terminalCommandHistoryLimit;
+        private int _terminalInputLengthLimit;
         private string _currentTerminalInput;
-        private IList<string> _previousTerminalInputs;
+        private IList<TerminalCommand> _previousTerminalCommands;
 
         public TerminalState()
         {
-            _previousTerminalInputs = new List<string>();
+            _previousTerminalCommands = new List<TerminalCommand>();
         }
 
-        public int GetInputHistoryLimit()
+        public int GetCommandHistoryLimit()
         {
-            return _inputHistoryLimit;
+            return _terminalCommandHistoryLimit;
         }
 
         public int GetInputLengthLimit()
         {
-            return _inputLengthLimit;
+            return _terminalInputLengthLimit;
         }
 
         public string GetCurrentInput()
@@ -30,30 +31,30 @@ namespace SysEarth.States
             return _currentTerminalInput;
         }
 
-        public IList<string> GetPreviousTerminalInputs()
+        public IList<TerminalCommand> GetPreviousTerminalCommands()
         {
-            return _previousTerminalInputs;
+            return _previousTerminalCommands;
         }
 
-        public bool TrySetInputHistoryLimit(int limitValue)
+        public bool TrySetCommandHistoryLimit(int limitValue)
         {
             if (limitValue <= 0)
             {
                 return false;
             }
 
-            _inputHistoryLimit = limitValue;
+            _terminalCommandHistoryLimit = limitValue;
             return true;
         }
 
-        public bool TrySetInputLengthLimit(int limitValue)
+        public bool TrySetTerminalInputLengthLimit(int limitValue)
         {
             if (limitValue <= 0)
             {
                 return false;
             }
 
-            _inputLengthLimit = limitValue;
+            _terminalInputLengthLimit = limitValue;
             return true;
         }
 
@@ -73,9 +74,9 @@ namespace SysEarth.States
             _currentTerminalInput = string.Empty;
         }
 
-        public void ClearPreviousInputs()
+        public void ClearPreviousCommands()
         {
-            _previousTerminalInputs.Clear();
+            _previousTerminalCommands.Clear();
         }
 
         public bool TryValidateInput(string input, out string validInput)
@@ -107,28 +108,31 @@ namespace SysEarth.States
             return false;
         }
 
-        public bool TryAddHistoricalInput(string input)
+        public bool TryAddHistoricalCommand(TerminalCommand historicalCommand)
         {
-            if (string.IsNullOrEmpty(input) || _previousTerminalInputs.Count == GetInputHistoryLimit())
+            if (historicalCommand == null || 
+                string.IsNullOrEmpty(historicalCommand.TerminalCommandInput) || 
+                string.IsNullOrEmpty(historicalCommand.TerminalCommandOutput) || 
+                _previousTerminalCommands.Count == GetCommandHistoryLimit())
             {
                 return false;
             }
 
-            _previousTerminalInputs.Add(input);
+            _previousTerminalCommands.Add(historicalCommand);
             return true;
         }
 
-        public bool TryRemoveOldestHistoricalInput()
+        public bool TryRemoveOldestHistoricalCommand()
         {
             // Only remove if we are at the limit
-            if (_previousTerminalInputs.Count < GetInputHistoryLimit())
+            if (_previousTerminalCommands.Count < GetCommandHistoryLimit())
             {
                 return false;
             }
 
             // Remove the oldest inserted element
-            var oldestInput = _previousTerminalInputs.FirstOrDefault();
-            _previousTerminalInputs.Remove(oldestInput);
+            var oldestCommand = _previousTerminalCommands.FirstOrDefault();
+            _previousTerminalCommands.Remove(oldestCommand);
             return true;
         }
     }

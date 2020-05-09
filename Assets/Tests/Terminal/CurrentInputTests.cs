@@ -19,7 +19,7 @@ namespace SysEarth.Tests.Terminal
         {
             var terminalState = new TerminalState();
             var expected = "test";
-            var isLengthLimitSet = terminalState.TrySetInputLengthLimit(10);
+            var isLengthLimitSet = terminalState.TrySetTerminalInputLengthLimit(10);
             var isInputSet = terminalState.TrySetCurrentInput(expected);
             var actual = terminalState.GetCurrentInput();
 
@@ -51,7 +51,7 @@ namespace SysEarth.Tests.Terminal
         {
             var terminalState = new TerminalState();
             var stringOverLengthLimit = "this is a really long test";
-            var isLengthLimitSet = terminalState.TrySetInputLengthLimit(10);
+            var isLengthLimitSet = terminalState.TrySetTerminalInputLengthLimit(10);
             var isInputSet = terminalState.TrySetCurrentInput(stringOverLengthLimit);
 
             Assert.IsTrue(isLengthLimitSet);
@@ -63,7 +63,7 @@ namespace SysEarth.Tests.Terminal
         {
             var terminalState = new TerminalState();
             var previousInput = "exists";
-            var isLengthLimitSet = terminalState.TrySetInputLengthLimit(10);
+            var isLengthLimitSet = terminalState.TrySetTerminalInputLengthLimit(10);
             var isInputSet = terminalState.TrySetCurrentInput(previousInput);
             terminalState.ClearCurrentInput();
             var actual = terminalState.GetCurrentInput();

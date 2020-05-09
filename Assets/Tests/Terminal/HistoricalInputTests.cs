@@ -1,124 +1,162 @@
 ﻿using NUnit.Framework;
+using SysEarth.Models;
 using SysEarth.States;
 
 namespace SysEarth.Tests.Terminal
 {
-    public class HistoricalInputTests
+    public class HistoricalCommandTests
     {
         [Test]
-        public void GetDefaultHistoricalInputsTest()
+        public void GetDefaultHistoricalCommandsTest()
         {
             var terminalState = new TerminalState();
-            var previousInputs = terminalState.GetPreviousTerminalInputs();
+            var previousCommands = terminalState.GetPreviousTerminalCommands();
 
-            Assert.IsNotNull(previousInputs);
-            Assert.IsEmpty(previousInputs);
+            Assert.IsNotNull(previousCommands);
+            Assert.IsEmpty(previousCommands);
         }
 
         [Test]
-        public void AddHistoricalInputTest()
+        public void AddHistoricalCommandTest()
         {
             var terminalState = new TerminalState();
-            var expected = "test";
-            var isHistoryLimitSet = terminalState.TrySetInputHistoryLimit(10);
-            var isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(expected);
-            var previousInputs = terminalState.GetPreviousTerminalInputs();
+            var terminalCommand = new TerminalCommand { TerminalCommandInput = "testInput" , TerminalCommandOutput = "testOutput" };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(10);
+            var isAddHistoricalCommandSuccess = terminalState.TryAddHistoricalCommand(terminalCommand);
+            var previousCommands = terminalState.GetPreviousTerminalCommands();
 
             Assert.IsTrue(isHistoryLimitSet);
-            Assert.IsTrue(isAddHistoricalInputSuccess);
-            Assert.IsNotNull(previousInputs);
-            Assert.IsNotEmpty(previousInputs);
-            Assert.That(previousInputs.Contains(expected));
+            Assert.IsTrue(isAddHistoricalCommandSuccess);
+            Assert.IsNotNull(previousCommands);
+            Assert.IsNotEmpty(previousCommands);
+            Assert.IsTrue(previousCommands.Contains(terminalCommand));
         }
 
         [Test]
-        public void AddHistoricalInputAsNullTest()
+        public void AddHistoricalCommandAsNullTest()
         {
             var terminalState = new TerminalState();
-            var isHistoryLimitSet = terminalState.TrySetInputHistoryLimit(10);
-            var isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(null);
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(10);
+            var isAddHistoricalCommandSuccess = terminalState.TryAddHistoricalCommand(null);
 
             Assert.IsTrue(isHistoryLimitSet);
-            Assert.IsFalse(isAddHistoricalInputSuccess);
+            Assert.IsFalse(isAddHistoricalCommandSuccess);
         }
 
         [Test]
-        public void AddHistoricalInputAsEmptyTest()
+        public void AddHistoricalCommandWithNullInputTest()
         {
             var terminalState = new TerminalState();
-            var isHistoryLimitSet = terminalState.TrySetInputHistoryLimit(10);
-            var isAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(string.Empty);
+            var terminalCommand = new TerminalCommand { TerminalCommandInput = null, TerminalCommandOutput = "testOutput" };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(10);
+            var isAddHistoricalCommandSuccess = terminalState.TryAddHistoricalCommand(terminalCommand);
 
             Assert.IsTrue(isHistoryLimitSet);
-            Assert.IsFalse(isAddHistoricalInputSuccess);
+            Assert.IsFalse(isAddHistoricalCommandSuccess);
         }
 
         [Test]
-        public void AddHistoricalInputWhenAtLimitTest()
+        public void AddHistoricalCommandWithNullOutputTest()
         {
             var terminalState = new TerminalState();
-            var underLimitInput = "under limit";
-            var overLimitInput = "over limit";
-            var isHistoryLimitSet = terminalState.TrySetInputHistoryLimit(1);
-            var isUnderLimitAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(underLimitInput);
-            var isOverLimitAddHistoricalInputSuccess = terminalState.TryAddHistoricalInput(overLimitInput);
-            var previousInputs = terminalState.GetPreviousTerminalInputs();
+            var terminalCommand = new TerminalCommand { TerminalCommandInput = "testInput", TerminalCommandOutput = null };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(10);
+            var isAddHistoricalCommandSuccess = terminalState.TryAddHistoricalCommand(terminalCommand);
 
             Assert.IsTrue(isHistoryLimitSet);
-            Assert.IsTrue(isUnderLimitAddHistoricalInputSuccess);
-            Assert.IsFalse(isOverLimitAddHistoricalInputSuccess);
-            Assert.That(previousInputs.Contains(underLimitInput));
-            Assert.IsFalse(previousInputs.Contains(overLimitInput));
+            Assert.IsFalse(isAddHistoricalCommandSuccess);
         }
 
         [Test]
-        public void RemoveHistoricalInputWhenAtLimitTest()
+        public void AddHistoricalCommandWithEmptyInputTest()
         {
             var terminalState = new TerminalState();
-            var expected = "test";
-            var isHistoryLimitSet = terminalState.TrySetInputHistoryLimit(1);
-            var isAddSuccess = terminalState.TryAddHistoricalInput(expected);
-            var isRemoveSuccess = terminalState.TryRemoveOldestHistoricalInput();
-            var previousInputs = terminalState.GetPreviousTerminalInputs();
+            var terminalCommand = new TerminalCommand { TerminalCommandInput = string.Empty, TerminalCommandOutput = "testOutput" };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(10);
+            var isAddHistoricalCommandSuccess = terminalState.TryAddHistoricalCommand(terminalCommand);
+
+            Assert.IsTrue(isHistoryLimitSet);
+            Assert.IsFalse(isAddHistoricalCommandSuccess);
+        }
+
+        [Test]
+        public void AddHistoricalCommandWithEmptyOutputTest()
+        {
+            var terminalState = new TerminalState();
+            var terminalCommand = new TerminalCommand { TerminalCommandInput = "testInput", TerminalCommandOutput = string.Empty };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(10);
+            var isAddHistoricalCommandSuccess = terminalState.TryAddHistoricalCommand(terminalCommand);
+
+            Assert.IsTrue(isHistoryLimitSet);
+            Assert.IsFalse(isAddHistoricalCommandSuccess);
+        }
+
+        [Test]
+        public void AddHistoricalCommandWhenAtLimitTest()
+        {
+            var terminalState = new TerminalState();
+            var underLimitTerminalCommand = new TerminalCommand { TerminalCommandInput = "underLimitInput", TerminalCommandOutput = "underLimitOutput" };
+            var overLimitTerminalCommand = new TerminalCommand { TerminalCommandInput = "overLimitInput", TerminalCommandOutput = "overLimitOutput" };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(1);
+            var isUnderLimitAddHistoricalCommandSuccess = terminalState.TryAddHistoricalCommand(underLimitTerminalCommand);
+            var isOverLimitAddHistoricalCommandSuccess = terminalState.TryAddHistoricalCommand(overLimitTerminalCommand);
+            var previousCommands = terminalState.GetPreviousTerminalCommands();
+
+            Assert.IsTrue(isHistoryLimitSet);
+            Assert.IsTrue(isUnderLimitAddHistoricalCommandSuccess);
+            Assert.IsFalse(isOverLimitAddHistoricalCommandSuccess);
+            Assert.IsTrue(previousCommands.Contains(underLimitTerminalCommand));
+            Assert.IsFalse(previousCommands.Contains(overLimitTerminalCommand));
+        }
+
+        [Test]
+        public void RemoveHistoricalCommandWhenAtLimitTest()
+        {
+            var terminalState = new TerminalState();
+            var terminalCommand = new TerminalCommand { TerminalCommandInput = "testInput", TerminalCommandOutput = "testOutput" };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(1);
+            var isAddSuccess = terminalState.TryAddHistoricalCommand(terminalCommand);
+            var isRemoveSuccess = terminalState.TryRemoveOldestHistoricalCommand();
+            var previousCommands = terminalState.GetPreviousTerminalCommands();
 
             Assert.IsTrue(isHistoryLimitSet);
             Assert.IsTrue(isAddSuccess);
             Assert.IsTrue(isRemoveSuccess);
-            Assert.IsFalse(previousInputs.Contains(expected));
-            Assert.IsEmpty(previousInputs);
+            Assert.IsFalse(previousCommands.Contains(terminalCommand));
+            Assert.IsEmpty(previousCommands);
         }
 
         [Test]
-        public void DoNotRemoveHistoricalInputWhenUnderLimitTest()
+        public void DoNotRemoveHistoricalCommandWhenUnderLimitTest()
         {
             var terminalState = new TerminalState();
-            var expected = "test";
-            var isHistoryLimitSet = terminalState.TrySetInputHistoryLimit(5);
-            var isAddSuccess = terminalState.TryAddHistoricalInput(expected);
-            var isRemoveSuccess = terminalState.TryRemoveOldestHistoricalInput();
-            var previousInputs = terminalState.GetPreviousTerminalInputs();
+            var terminalCommand = new TerminalCommand { TerminalCommandInput = "testInput", TerminalCommandOutput = "testOutput" };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(5);
+            var isAddSuccess = terminalState.TryAddHistoricalCommand(terminalCommand);
+            var isRemoveSuccess = terminalState.TryRemoveOldestHistoricalCommand();
+            var previousCommands = terminalState.GetPreviousTerminalCommands();
 
             Assert.IsTrue(isHistoryLimitSet);
             Assert.IsTrue(isAddSuccess);
             Assert.IsFalse(isRemoveSuccess);
-            Assert.That(previousInputs.Contains(expected));
-            Assert.IsNotEmpty(previousInputs);
+            Assert.IsTrue(previousCommands.Contains(terminalCommand));
+            Assert.IsNotEmpty(previousCommands);
         }
 
         [Test]
-        public void ClearHistoricalInputTest()
+        public void ClearHistoricalCommandTest()
         {
             var terminalState = new TerminalState();
-            var expected = "test";
-            var isHistoryLimitSet = terminalState.TrySetInputHistoryLimit(10);
-            var isAddSuccess = terminalState.TryAddHistoricalInput(expected);
-            terminalState.ClearPreviousInputs();
-            var previousInputs = terminalState.GetPreviousTerminalInputs();
+            var terminalCommand = new TerminalCommand { TerminalCommandInput = "testInput", TerminalCommandOutput = "testOutput" };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(10);
+            var isAddSuccess = terminalState.TryAddHistoricalCommand(terminalCommand);
+            terminalState.ClearPreviousCommands();
+            var previousCommands = terminalState.GetPreviousTerminalCommands();
 
             Assert.IsTrue(isHistoryLimitSet);
             Assert.IsTrue(isAddSuccess);
-            Assert.IsFalse(previousInputs.Contains(expected));
-            Assert.IsEmpty(previousInputs);
+            Assert.IsFalse(previousCommands.Contains(terminalCommand));
+            Assert.IsEmpty(previousCommands);
         }
     }
 }
