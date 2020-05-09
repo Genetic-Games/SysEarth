@@ -118,6 +118,12 @@ namespace SysEarth.Controllers
                     }
                 }
 
+                if (userInteraction.SubmittedInput == "clear")
+                {
+                    userInteraction.IsOutputModified = true;
+                    _terminalState.HidePreviousCommands();
+                }
+
                 // TODO - Validate the parsed command is a valid command
 
                 // Add the input to the list of historical inputs if it is a valid input (not empty, null, or over the character limit)

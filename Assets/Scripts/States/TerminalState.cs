@@ -79,6 +79,14 @@ namespace SysEarth.States
             _previousTerminalCommands.Clear();
         }
 
+        public void HidePreviousCommands()
+        {
+            foreach (var previousTerminalCommand in _previousTerminalCommands)
+            {
+                previousTerminalCommand.IsVisibleInTerminal = false;
+            }
+        }
+
         public bool TryValidateInput(string input, out string validInput)
         {
             validInput = null;
