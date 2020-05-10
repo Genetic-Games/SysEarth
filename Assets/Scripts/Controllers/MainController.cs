@@ -81,13 +81,17 @@ namespace SysEarth.Controllers
         // Update is called once per frame
         public void Update()
         {
+            // First, figure out if the user has done anything to modify the input
+            // TODO - Should also consider the case of up arrow and down arrow to go back to previous inputs (which cannot be handled by Input.inputString)
             var userInteraction = _userInterfaceController.GetUserInteraction(Input.inputString, _terminalState);
 
+            // If the user has modified input, make sure that is reflected back in the UI
             if (userInteraction.IsInputModified)
             {
                 _userInterfaceController.SetUserInterfaceText(InputTextObject, userInteraction.ModifiedInput, addPrompt: true);
             }
 
+            // Next, if the user submitted input as part of their interactions, attempt to validate and execute what they submitted
             if (userInteraction.IsInputSubmitted)
             {
                 // TODO - Parse the text of the submitted command here
@@ -144,6 +148,7 @@ namespace SysEarth.Controllers
                 // TODO - Indicate that the output is modified (if it is) and set the modified output here
             }
 
+            // Finally, if the user's input requires a corresponding change in output, reflect that in the UI
             if (userInteraction.IsOutputModified)
             {
                 // If a command was submitted, it has already been added to the previous commands with relevant output
