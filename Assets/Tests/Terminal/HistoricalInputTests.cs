@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using SysEarth.Models;
 using SysEarth.States;
+using System.Linq;
 
 namespace SysEarth.Tests.Terminal
 {
@@ -157,6 +158,37 @@ namespace SysEarth.Tests.Terminal
             Assert.IsTrue(isAddSuccess);
             Assert.IsFalse(previousCommands.Contains(terminalCommand));
             Assert.IsEmpty(previousCommands);
+        }
+
+        [Test]
+        public void HistoricalCommandIsVisibleByDefaultTest()
+        {
+            var terminalState = new TerminalState();
+            var terminalCommand = new TerminalCommand { TerminalCommandInput = "testInput", TerminalCommandOutput = "testOutput" };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(10);
+            var isAddSuccess = terminalState.TryAddHistoricalCommand(terminalCommand);
+            var previousCommands = terminalState.GetPreviousTerminalCommands();
+            var previousCommand = previousCommands.FirstOrDefault();
+
+            Assert.IsTrue(isHistoryLimitSet);
+            Assert.IsTrue(isAddSuccess);
+            Assert.IsTrue(previousCommand.IsVisibleInTerminal);
+        }
+
+        [Test]
+        public void HideHistoricalCommandTest()
+        {
+            var terminalState = new TerminalState();
+            var terminalCommand = new TerminalCommand { TerminalCommandInput = "testInput", TerminalCommandOutput = "testOutput" };
+            var isHistoryLimitSet = terminalState.TrySetCommandHistoryLimit(10);
+            var isAddSuccess = terminalState.TryAddHistoricalCommand(terminalCommand);
+            terminalState.HidePreviousCommands();
+            var previousCommands = terminalState.GetPreviousTerminalCommands();
+            var previousCommand = previousCommands.FirstOrDefault();
+
+            Assert.IsTrue(isHistoryLimitSet);
+            Assert.IsTrue(isAddSuccess);
+            Assert.IsFalse(previousCommand.IsVisibleInTerminal);
         }
     }
 }
