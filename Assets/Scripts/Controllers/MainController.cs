@@ -2,6 +2,7 @@
 using SysEarth.Models;
 using SysEarth.States;
 using System;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -118,28 +119,51 @@ namespace SysEarth.Controllers
                     args = new string[] { "clear" };
                 }
 
+                if (userInteraction.SubmittedInput.Equals("help clear", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    args = new string[] { "help", "clear" };
+                }
+
+                if (userInteraction.SubmittedInput.Equals("help help", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    args = new string[] { "help", "help" };
+                }
+
+                if (userInteraction.SubmittedInput.Equals("clear help", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    args = new string[] { "clear", "help" };
+                }
+
+                if (userInteraction.SubmittedInput.Equals("help fake", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    args = new string[] { "help", "fake" };
+                }
+
+                // TODO - Replace args usage above and the command below with an object returning command name and flags / options user entered
                 // TODO - Validate the parsed command is a valid command
                 // TODO - Continue to validate the command here actually against the list of commands available (syntax and all)
                 var userInteractionResponse = new StringBuilder();
 
                 // Check to see that the we can retrieve the command the user wants to execute
-                var isCommandRetrievedSuccess = _commandController.TryGetCommand(_commandState, userInteraction.SubmittedInput, out var command);
+                var userSubmittedCommand = args?.FirstOrDefault() ?? userInteraction.SubmittedInput; // TODO - Fix this!  See above.
+                var isCommandRetrievedSuccess = _commandController.TryGetCommand(_commandState, userSubmittedCommand, out var command);
                 if (!isCommandRetrievedSuccess)
                 {
-                    userInteractionResponse.AppendLine($"Command `{userInteraction.SubmittedInput}` not found.");
+                    userInteractionResponse.AppendLine($"Command `{userSubmittedCommand}` not found.");
                 }
 
                 // Execute the command, even if we failed to retrieve the user's command and are using the default command
+                var isArgsValidForCommand = command.TryValidateArguments(out var validationResponse, args);
                 var commandResponse = command.ExecuteCommand(args);
                 userInteractionResponse.AppendLine(commandResponse);
                 userInteraction.IsOutputModified = true;
 
-                // If the command was clear, we do not want to show output for it, otherwise we do want output visible
+                // If the command was a valid `clear` command, we do not want to show output for it, otherwise we do want output visible
                 var terminalCommand = new TerminalCommand
                 {
                     TerminalCommandInput = userInteraction.SubmittedInput,
                     TerminalCommandOutput = userInteractionResponse.ToString(),
-                    IsVisibleInTerminal = command.GetType() != typeof(ClearCommand)
+                    IsVisibleInTerminal = command.GetType() != typeof(ClearCommand) || !isArgsValidForCommand
                 };
 
                 // Add the input to the list of historical inputs if it is a valid input (not empty, null, or over the character limit)
