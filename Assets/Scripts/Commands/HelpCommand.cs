@@ -1,6 +1,5 @@
 ﻿using SysEarth.States;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace SysEarth.Commands
@@ -31,50 +30,27 @@ namespace SysEarth.Commands
         // Class Specific Functionality
         public bool TryValidateArguments(out string responseMessage, params string[] args)
         {
-            if (args == null || args.Length == 0)
-            {
-                responseMessage = $"Error - `{GetCommandName()}` command not initialized correctly";
-                return false;
-            }
-
-            if (args.Length >= 2)
-            {
-                responseMessage = $"Error - Invalid number of arguments to command `{GetCommandName()}`: {args.Length} arguments";
-                return false;
-            }
-
-            if (args.FirstOrDefault() != GetCommandName())
-            {
-                responseMessage = $"Error - Command `{GetCommandName()}` does not match input of `{args.FirstOrDefault()}`";
-                return false;
-            }
-
-            // User calls `help`
-            if (args.Length == 1)
-            {
-                responseMessage = "Command successfully validated";
-                return true;
-            }
-
-            responseMessage = $"Error - Unexpected validation error - failed to validate command `{GetCommandName()}`";
-            return false;
+            // In the unique case of the help command as the default command, validation errors are expected and
+            // may not even match this command, so we can skip validation entirely.
+            responseMessage = "Successfully validated";
+            return true;
         }
 
         public string ExecuteCommand(params string[] args)
         {
             var responseMessage = new StringBuilder();
 
-            // In the unique case of the help command as the default command, validation errors are expected
-            // Instead of returning on failed validation, we add it to the output to inform the user of the issue
+            // Validate the arguments to the command
             if (!TryValidateArguments(out var validationResponse, args))
             {
                 responseMessage.AppendLine(validationResponse);
             }
 
-            // Build the list of available commands to inform the user
+            // Execute the valid command logic
             var availableCommands = _commandState.GetAvailableCommands();
             responseMessage.AppendLine("Available Commands:");
 
+            // Build the list of available commands to inform the user of them
             foreach (var command in availableCommands)
             {
                 responseMessage.AppendLine(command);

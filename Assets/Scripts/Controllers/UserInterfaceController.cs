@@ -12,8 +12,9 @@ namespace SysEarth.Controllers
         private readonly IList<char> _submitCharacters = new List<char> { '\r', '\n' };
         private readonly IList<char> _deleteCharacters = new List<char> { '\b' }; // Note - only backspace is supported by Input, delete is unsupported
 
-        private const string _newLine = "\n";
         private const string _userInputPrompt = "|> ";
+
+        // TODO - Consider the case where a "cursor" is implemented, allowing deletion / modification at various places in the string and having to keep track of placement
 
         // TODO - Should also consider the case of up arrow and down arrow to go back to previous inputs
 
