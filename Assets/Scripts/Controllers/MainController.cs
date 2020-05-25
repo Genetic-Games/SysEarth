@@ -1,6 +1,7 @@
 ﻿using SysEarth.Commands;
 using SysEarth.Models;
 using SysEarth.States;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,6 +27,7 @@ namespace SysEarth.Controllers
         private FileController _fileController;
         private PermissionController _permissionController;
         private UserInterfaceController _userInterfaceController;
+        private CommandController _commandController;
 
         // Start is called before the first frame update
         public void Start()
@@ -38,6 +40,7 @@ namespace SysEarth.Controllers
             _fileController = new FileController();
             _permissionController = new PermissionController();
             _userInterfaceController = new UserInterfaceController();
+            _commandController = new CommandController();
 
             InitializeTerminalState(_terminalState);
             InitializeCommandState(_commandState);
@@ -70,7 +73,7 @@ namespace SysEarth.Controllers
 
         private void InitializeCommandState(CommandState commandState)
         {
-            var helpCommand = new HelpCommand();
+            var helpCommand = new HelpCommand(commandState);
             var isAddCommandSuccess = commandState.TryAddAvailableCommand(helpCommand.GetCommandName(), helpCommand);
 
             Debug.Assert(isAddCommandSuccess, "Failed to add help command to available command state");
@@ -98,11 +101,13 @@ namespace SysEarth.Controllers
                 Debug.Log($"User input submitted: {userInteraction.SubmittedInput}");
 
                 // TODO - This is temporary to work out process flow before text parsing is in place
-                if (userInteraction.SubmittedInput == "help")
+                if (userInteraction.SubmittedInput.Equals("help", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    var availableCommands = _commandState.GetAvailableCommands();
+                    var args = new string[] { "help" };
+                    var command = _commandController.GetCommand(_commandState, userInteraction.SubmittedInput);
+                    var userInteractionResponse = command.ExecuteCommand(args);
+
                     userInteraction.IsOutputModified = true;
-                    var userInteractionResponse = string.Join("\n", availableCommands);
 
                     var terminalCommand = new TerminalCommand
                     {
@@ -122,7 +127,7 @@ namespace SysEarth.Controllers
                     }
                 }
 
-                if (userInteraction.SubmittedInput == "clear")
+                if (userInteraction.SubmittedInput.Equals("clear", StringComparison.InvariantCultureIgnoreCase))
                 {
                     userInteraction.IsOutputModified = true;
                     _terminalState.HidePreviousCommands();

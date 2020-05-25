@@ -12,10 +12,8 @@ namespace SysEarth.Commands
 
         IList<string> GetExampleUsages();
 
-        bool ValidateArguments(IList<string> args);
+        bool TryValidateArguments(out string responseMessage, params string[] args);
 
-        void ExecuteCommand(IList<string> args);
-
-        IList<string> GetResponseMessages();
+        string ExecuteCommand(params string[] args);
     }
 }

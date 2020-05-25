@@ -1,78 +1,86 @@
-﻿using System;
+﻿using SysEarth.States;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace SysEarth.Commands
 {
     public class HelpCommand : ICommand
     {
+        // Class Specific Fields
+        private readonly CommandState _commandState;
+
+        // Interface Fields
         private readonly string _commandName = "help";
-
         private IDictionary<string, string> _flagDescriptions = null;
-
         private string _commandDescription = "Get information about the commands available";
-
         private IList<string> _exampleUsages = new List<string> { "help" };
 
-        private IList<string> _responseMessages = new List<string> { "Command not yet validated or executed." };
-
+        // Interface Properties
         public string GetCommandName() => _commandName;
-
         public string GetCommandDescription() => _commandDescription;
-
         public IDictionary<string, string> GetCommandFlagDescriptions() => _flagDescriptions;
-
         public IList<string> GetExampleUsages() => _exampleUsages;
 
-        public IList<string> GetResponseMessages() => _responseMessages;
-
-        public bool ValidateArguments(IList<string> args)
+        // Constructors
+        public HelpCommand(CommandState commandState)
         {
-            _responseMessages = new List<string>();
+            _commandState = commandState;
+        }
 
-            if (args == null || args.Count == 0)
+        // Class Specific Functionality
+        public bool TryValidateArguments(out string responseMessage, params string[] args)
+        {
+            if (args == null || args.Length == 0)
             {
-                _responseMessages.Add($"`{_commandName}` command not initialized correctly");
+                responseMessage = $"Error - `{GetCommandName()}` command not initialized correctly";
                 return false;
             }
 
-            if (args.Count >= 2)
+            if (args.Length >= 2)
             {
-                _responseMessages.Add($"Invalid number of arguments: {args.Count}");
+                responseMessage = $"Error - Invalid number of arguments to command `{GetCommandName()}`: {args.Length} arguments";
                 return false;
             }
 
-            if (args[0] != _commandName) // TODO - find a safer way than array access
+            if (args.FirstOrDefault() != GetCommandName())
             {
-                _responseMessages.Add($"Command name of `{_commandName}` does not match input of `{args[0]}`");
+                responseMessage = $"Error - Command `{GetCommandName()}` does not match input of `{args.FirstOrDefault()}`";
                 return false;
             }
 
             // User calls `help`
-            if (args.Count == 1) 
+            if (args.Length == 1)
             {
-                _responseMessages.Add("Successfully validated");
+                responseMessage = "Command successfully validated";
                 return true;
             }
 
+            responseMessage = $"Error - Unexpected validation error - failed to validate command `{GetCommandName()}`";
             return false;
         }
 
-        public void ExecuteCommand(IList<string> args)
+        public string ExecuteCommand(params string[] args)
         {
-            if (args == null)
+            var responseMessage = new StringBuilder();
+
+            // In the unique case of the help command as the default command, validation errors are expected
+            // Instead of returning on failed validation, we add it to the output to inform the user of the issue
+            if (!TryValidateArguments(out var validationResponse, args))
             {
-                throw new ArgumentNullException($"`{_commandName}` command not initialized correctly");
+                responseMessage.AppendLine(validationResponse);
             }
 
-            bool isValidArguments = ValidateArguments(args);
+            // Build the list of available commands to inform the user
+            var availableCommands = _commandState.GetAvailableCommands();
+            responseMessage.AppendLine("Available Commands:");
 
-            if (!isValidArguments)
+            foreach (var command in availableCommands)
             {
-                throw new InvalidOperationException($"Invalid arguments to `{_commandName}` command");
+                responseMessage.AppendLine(command);
             }
 
-            // TODO - return list of all valid commands that should live ... somewhere?
-            throw new NotImplementedException();
+            return responseMessage.ToString();
         }
     }
 }

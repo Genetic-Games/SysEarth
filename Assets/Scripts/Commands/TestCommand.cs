@@ -8,11 +8,6 @@ namespace SysEarth.Commands
     /// </summary>
     public class TestCommand : ICommand
     {
-        public void ExecuteCommand(IList<string> args)
-        {
-            throw new NotImplementedException();
-        }
-
         public string GetCommandDescription()
         {
             throw new NotImplementedException();
@@ -38,7 +33,12 @@ namespace SysEarth.Commands
             throw new NotImplementedException();
         }
 
-        public bool ValidateArguments(IList<string> args)
+        public bool TryValidateArguments(out string responseMessage, params string[] args)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string ExecuteCommand(params string[] args)
         {
             throw new NotImplementedException();
         }
