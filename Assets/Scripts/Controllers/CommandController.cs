@@ -16,7 +16,7 @@ namespace SysEarth.Controllers
                 return true;
             }
 
-            Debug.Log($"Error - Failed to retrieve command: `{commandName}`");
+            Debug.Log($"Warning - Command `{commandName}` not found");
 
             // Default case is the `help` command if we did not find a match with other commands
             if (!commandState.TryGetCommand(_defaultCommand, out command))

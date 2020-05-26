@@ -1,7 +1,7 @@
 ﻿using SysEarth.Commands;
 using SysEarth.Models;
+using SysEarth.Parsers;
 using SysEarth.States;
-using System;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -31,7 +31,10 @@ namespace SysEarth.Controllers
         private UserInterfaceController _userInterfaceController;
         private CommandController _commandController;
 
-        // Start is called before the first frame update
+        // Parsers
+        private UserInputParser _userInputParser;
+
+        // Initialization
         public void Start()
         {
             _fileSystemState = new FileSystemState();
@@ -43,6 +46,8 @@ namespace SysEarth.Controllers
             _permissionController = new PermissionController();
             _userInterfaceController = new UserInterfaceController();
             _commandController = new CommandController();
+
+            _userInputParser = new UserInputParser();
 
             InitializeTerminalState(_terminalState);
             InitializeCommandState(_commandState, _terminalState);
@@ -86,9 +91,7 @@ namespace SysEarth.Controllers
             Debug.Assert(isAddCommandSuccess, "Failed to add `clear` command to available command state");
         }
 
-        // TODO - Check out https://github.com/sprache/Sprache for text parsing
-
-        // Update is called once per frame
+        // Game Loop - Executed Once Per Frame
         public void Update()
         {
             // First, figure out if the user has done anything to modify the input
@@ -104,66 +107,39 @@ namespace SysEarth.Controllers
             // Next, if the user submitted input as part of their interactions, attempt to validate and execute what they submitted
             if (userInteraction.IsInputSubmitted)
             {
-                // TODO - Parse the text of the submitted command here
-                Debug.Log($"User input submitted: {userInteraction.SubmittedInput}");
-
-                // TODO - This is temporary to work out process flow before text parsing is in place
-                string[] args = null;
-                if (userInteraction.SubmittedInput.Equals("help", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    args = new string[] { "help" };
-                }
-
-                if (userInteraction.SubmittedInput.Equals("clear", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    args = new string[] { "clear" };
-                }
-
-                if (userInteraction.SubmittedInput.Equals("help clear", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    args = new string[] { "help", "clear" };
-                }
-
-                if (userInteraction.SubmittedInput.Equals("help help", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    args = new string[] { "help", "help" };
-                }
-
-                if (userInteraction.SubmittedInput.Equals("clear help", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    args = new string[] { "clear", "help" };
-                }
-
-                if (userInteraction.SubmittedInput.Equals("help fake", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    args = new string[] { "help", "fake" };
-                }
-
-                // TODO - Replace args usage above and the command below with an object returning command name and flags / options user entered
-                // TODO - Validate the parsed command is a valid command
-                // TODO - Continue to validate the command here actually against the list of commands available (syntax and all)
                 var userInteractionResponse = new StringBuilder();
 
-                // Check to see that the we can retrieve the command the user wants to execute
-                var userSubmittedCommand = args?.FirstOrDefault() ?? userInteraction.SubmittedInput; // TODO - Fix this!  See above.
-                var isCommandRetrievedSuccess = _commandController.TryGetCommand(_commandState, userSubmittedCommand, out var command);
+                // Since the user submitted input, we now need to parse that input
+                Debug.Log($"User input submitted: `{userInteraction.SubmittedInput}`");
+
+                var isParseInputSuccess = _userInputParser.TryParseUserInput(userInteraction.SubmittedInput, out var parsedUserSubmittedInput);
+                if (!isParseInputSuccess)
+                {
+                    Debug.Log($"Failed to parse user input: `{userInteraction.SubmittedInput}`");
+                }
+
+                // Check to see that the we can retrieve the command the user wants to execute from the parsed input
+                var isCommandRetrievedSuccess = _commandController.TryGetCommand(_commandState, parsedUserSubmittedInput.CommandName, out var command);
                 if (!isCommandRetrievedSuccess)
                 {
-                    userInteractionResponse.AppendLine($"Command `{userSubmittedCommand}` not found.");
+                    userInteractionResponse.AppendLine($"Command `{parsedUserSubmittedInput.CommandName}` not found.");
                 }
 
                 // Execute the command, even if we failed to retrieve the user's command and are using the default command
-                var isArgsValidForCommand = command.TryValidateArguments(out var validationResponse, args);
+                // Note - Each command is in charge of its own validation and if / how it executes after succeeding or failing validation
+                var args = parsedUserSubmittedInput.Arguments?.ToArray();
                 var commandResponse = command.ExecuteCommand(args);
                 userInteractionResponse.AppendLine(commandResponse);
-                userInteraction.IsOutputModified = true;
 
-                // If the command was a valid `clear` command, we do not want to show output for it, otherwise we do want output visible
+                // Mark that the user's output will change based on this latest terminal command
+                userInteraction.IsOutputModified = true;
                 var terminalCommand = new TerminalCommand
                 {
                     TerminalCommandInput = userInteraction.SubmittedInput,
                     TerminalCommandOutput = userInteractionResponse.ToString(),
-                    IsVisibleInTerminal = command.GetType() != typeof(ClearCommand) || !isArgsValidForCommand
+
+                    // If the command was a valid `clear` command, we do not want to show output for it, otherwise we do want output visible
+                    IsVisibleInTerminal = command.GetType() != typeof(ClearCommand) || !command.TryValidateArguments(out _, args)
                 };
 
                 // Add the input to the list of historical inputs if it is a valid input (not empty, null, or over the character limit)
