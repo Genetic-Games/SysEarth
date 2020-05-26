@@ -13,34 +13,31 @@ namespace SysEarth.Parsers
         {
             parsedInput = new ParsedUserInput();
 
+            // Cannot parse input that does not exist
             if (rawInput == null || !rawInput.Any())
             {
-                parsedInput = null;
                 return false;
             }
 
+            // Split the input by white space delimiters to distinguish between the command and its arguments
             var splitInput = rawInput.Split(_delimiters.ToArray(), StringSplitOptions.RemoveEmptyEntries)?.ToList();
             if (splitInput == null || !splitInput.Any())
             {
-                parsedInput = null;
                 return false;
             }
-            else
-            {
-                parsedInput.Arguments = splitInput;
-            }
 
+            // Store the arguments, including the command name, to be used later when executing the command
+            parsedInput.Arguments = splitInput;
+
+            // Extract just the command name to use to pick the command class to execute
             var commandName = splitInput.FirstOrDefault();
             if (string.IsNullOrEmpty(commandName))
             {
-                parsedInput = null;
+                parsedInput = new ParsedUserInput();
                 return false;
             }
-            else
-            {
-                parsedInput.CommandName = commandName;
-            }
 
+            parsedInput.CommandName = commandName;
             return true;
         }
     }

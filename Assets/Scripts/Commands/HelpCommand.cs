@@ -65,7 +65,7 @@ namespace SysEarth.Commands
                     return true;
                 }
 
-                responseMessage = $"Error - Command `{args.LastOrDefault()}` not found";
+                responseMessage = $"Error - Command `{args.LastOrDefault()}` not found by `{GetCommandName()}` command.";
                 return false;
             }
 
@@ -116,7 +116,7 @@ namespace SysEarth.Commands
             // Default - `help` execution
             else
             {
-                var availableCommands = _commandState.GetAvailableCommands();
+                var availableCommands = _commandState.GetAvailableCommands().OrderBy(x => x); // Order alphabetically
                 responseMessage.AppendLine("Available Commands:");
 
                 // Build the list of available commands to inform the user of them

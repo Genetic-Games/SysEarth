@@ -19,7 +19,9 @@ namespace SysEarth.Tests.Parser
         {
             var isParseInputSuccess = _userInputParser.TryParseUserInput(null, out var parsedInput);
             Assert.IsFalse(isParseInputSuccess);
-            Assert.IsNull(parsedInput);
+            Assert.IsNotNull(parsedInput);
+            Assert.IsEmpty(parsedInput.CommandName);
+            Assert.IsEmpty(parsedInput.Arguments);
         }
 
         [Test]
@@ -27,7 +29,9 @@ namespace SysEarth.Tests.Parser
         {
             var isParseInputSuccess = _userInputParser.TryParseUserInput(string.Empty, out var parsedInput);
             Assert.IsFalse(isParseInputSuccess);
-            Assert.IsNull(parsedInput);
+            Assert.IsNotNull(parsedInput);
+            Assert.IsEmpty(parsedInput.CommandName);
+            Assert.IsEmpty(parsedInput.Arguments);
         }
 
         [Test]
@@ -36,7 +40,9 @@ namespace SysEarth.Tests.Parser
             var rawInput = " ";
             var isParseInputSuccess = _userInputParser.TryParseUserInput(rawInput, out var parsedInput);
             Assert.IsFalse(isParseInputSuccess);
-            Assert.IsNull(parsedInput);
+            Assert.IsNotNull(parsedInput);
+            Assert.IsEmpty(parsedInput.CommandName);
+            Assert.IsEmpty(parsedInput.Arguments);
         }
 
         [Test]
@@ -45,7 +51,9 @@ namespace SysEarth.Tests.Parser
             var rawInput = "\t";
             var isParseInputSuccess = _userInputParser.TryParseUserInput(rawInput, out var parsedInput);
             Assert.IsFalse(isParseInputSuccess);
-            Assert.IsNull(parsedInput);
+            Assert.IsNotNull(parsedInput);
+            Assert.IsEmpty(parsedInput.CommandName);
+            Assert.IsEmpty(parsedInput.Arguments);
         }
 
         [Test]
@@ -54,7 +62,9 @@ namespace SysEarth.Tests.Parser
             var rawInput = "\r";
             var isParseInputSuccess = _userInputParser.TryParseUserInput(rawInput, out var parsedInput);
             Assert.IsFalse(isParseInputSuccess);
-            Assert.IsNull(parsedInput);
+            Assert.IsNotNull(parsedInput);
+            Assert.IsEmpty(parsedInput.CommandName);
+            Assert.IsEmpty(parsedInput.Arguments);
         }
 
         [Test]
@@ -63,7 +73,9 @@ namespace SysEarth.Tests.Parser
             var rawInput = "\n";
             var isParseInputSuccess = _userInputParser.TryParseUserInput(rawInput, out var parsedInput);
             Assert.IsFalse(isParseInputSuccess);
-            Assert.IsNull(parsedInput);
+            Assert.IsNotNull(parsedInput);
+            Assert.IsEmpty(parsedInput.CommandName);
+            Assert.IsEmpty(parsedInput.Arguments);
         }
 
         [Test]
@@ -72,7 +84,9 @@ namespace SysEarth.Tests.Parser
             var rawInput = "     \t\t\t\t\r\r\r\r\n\n\n\n";
             var isParseInputSuccess = _userInputParser.TryParseUserInput(rawInput, out var parsedInput);
             Assert.IsFalse(isParseInputSuccess);
-            Assert.IsNull(parsedInput);
+            Assert.IsNotNull(parsedInput);
+            Assert.IsEmpty(parsedInput.CommandName);
+            Assert.IsEmpty(parsedInput.Arguments);
         }
 
         [Test]
