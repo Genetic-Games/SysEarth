@@ -15,12 +15,14 @@ namespace SysEarth.Parsers
 
             if (rawInput == null || !rawInput.Any())
             {
+                parsedInput = null;
                 return false;
             }
 
             var splitInput = rawInput.Split(_delimiters.ToArray(), StringSplitOptions.RemoveEmptyEntries)?.ToList();
             if (splitInput == null || !splitInput.Any())
             {
+                parsedInput = null;
                 return false;
             }
             else
@@ -31,6 +33,7 @@ namespace SysEarth.Parsers
             var commandName = splitInput.FirstOrDefault();
             if (string.IsNullOrEmpty(commandName))
             {
+                parsedInput = null;
                 return false;
             }
             else
