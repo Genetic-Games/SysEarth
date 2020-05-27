@@ -1,7 +1,8 @@
-﻿using System;
+﻿using SysEarth.Commands;
+using System;
 using System.Collections.Generic;
 
-namespace SysEarth.Commands
+namespace SysEarth.Tests.Commands
 {
     /// <summary>
     /// This command class is only meant to be used for testing, not for player usage

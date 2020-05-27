@@ -37,16 +37,16 @@ namespace SysEarth.Commands
                 return false;
             }
 
+            if (args.FirstOrDefault() != GetCommandName())
+            {
+                responseMessage = $"Error - Command `{GetCommandName()}` does not match input of `{args.FirstOrDefault()}`";
+                return false;
+            }
+
             // TODO - Change this validation so that the second parameter can be a file name if we do not want to run `ls` in current directory (or want flags!)
             if (args.Length >= 2)
             {
                 responseMessage = $"Error - Invalid number of arguments to command `{GetCommandName()}`: {args.Length} arguments";
-                return false;
-            }
-
-            if (args.FirstOrDefault() != GetCommandName())
-            {
-                responseMessage = $"Error - Command `{GetCommandName()}` does not match input of `{args.FirstOrDefault()}`";
                 return false;
             }
 
@@ -75,7 +75,7 @@ namespace SysEarth.Commands
 
             // Build a list of all the files and sub-directories in the target directory
             var responseMessage = new StringBuilder();
-            responseMessage.AppendLine($"Contents of {currentDirectory.Name} Directory:");
+            responseMessage.AppendLine($"Contents of `{currentDirectory.Name}` Directory:");
 
             var fileNames = currentDirectory.FilesInDirectory.Select(x => x.Name);
             var subDirectoryNames = currentDirectory.SubDirectories.Select(x => x.Name).ToList();
@@ -88,6 +88,7 @@ namespace SysEarth.Commands
             var directoryContents = fileNames.Concat(subDirectoryNames).OrderBy(x => x);
 
             // TODO - Figure out a way to differentiate between files and folders in the UI
+            // TODO - Put a slash after directory names to make them easier to distinguish
             foreach (var itemInDirectory in directoryContents)
             {
                 responseMessage.AppendLine(itemInDirectory);

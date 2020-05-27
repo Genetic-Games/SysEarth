@@ -49,8 +49,10 @@ namespace SysEarth.Controllers
 
             _userInputParser = new UserInputParser();
 
+            // TODO - Move initialization of all of these pieces to a separate folder with classes (i.e. - Initializers)
             InitializeTerminalState(_terminalState);
-            InitializeCommandState(_commandState, _terminalState, _fileSystemState);
+            InitializeFileSystemState(_fileSystemState, _directoryController, _fileController);
+            InitializeCommandState(_commandState, _terminalState, _fileSystemState, _directoryController);
             InitializeConsoleText(InputTextObject, addPrompt: true);
             InitializeConsoleText(OutputTextObject, addPrompt: false);
         }
@@ -70,6 +72,21 @@ namespace SysEarth.Controllers
             Debug.Assert(isInputHistorySetSuccess, "Failed to set maximum input history limit.");
         }
 
+        private void InitializeFileSystemState(FileSystemState fileSystemState, DirectoryController directoryController, FileController fileController)
+        {
+            // TODO - Make it so that all actions are permission based (add requires write access, so does delete, need read access to look at anything, execute to run something, etc)
+            var root = fileSystemState.GetRootDirectory();
+            var homeDirectoryPermission = new Permission
+            {
+                Read = true,
+                Execute = true
+            };
+
+            var isAddHomeDirectorySuccess = directoryController.TryAddDirectory("home", homeDirectoryPermission, root, out var homeDirectory);
+
+            Debug.Assert(isAddHomeDirectorySuccess, "Failed to add `home` directory under `root` directory");
+        }
+
         private void InitializeConsoleText(Text consoleText, bool addPrompt = false)
         {
             Debug.Assert(consoleText != null, "A console text object is not properly set.");
@@ -81,7 +98,8 @@ namespace SysEarth.Controllers
         private void InitializeCommandState(
             CommandState commandState, 
             TerminalState terminalState, 
-            FileSystemState fileSystemState)
+            FileSystemState fileSystemState,
+            DirectoryController directoryController)
         {
             var helpCommand = new HelpCommand(commandState);
             var isAddCommandSuccess = commandState.TryAddAvailableCommand(helpCommand.GetCommandName(), helpCommand);
@@ -97,6 +115,11 @@ namespace SysEarth.Controllers
             isAddCommandSuccess = commandState.TryAddAvailableCommand(listCommand.GetCommandName(), listCommand);
 
             Debug.Assert(isAddCommandSuccess, "Failed to add `ls` command to available command state");
+
+            var changeDirectoryCommand = new ChangeDirectoryCommand(fileSystemState, directoryController);
+            isAddCommandSuccess = commandState.TryAddAvailableCommand(changeDirectoryCommand.GetCommandName(), changeDirectoryCommand);
+
+            Debug.Assert(isAddCommandSuccess, "Failed to add `cd` command to available command state");
         }
 
         // Game Loop - Executed Once Per Frame
@@ -109,6 +132,7 @@ namespace SysEarth.Controllers
             // If the user has modified input, make sure that is reflected back in the UI
             if (userInteraction.IsInputModified)
             {
+                // TODO - Figure out how to show the user the current directory too as part of the input (before the prompt), like Bash does
                 _userInterfaceController.SetUserInterfaceText(InputTextObject, userInteraction.ModifiedInput, addPrompt: true);
             }
 
@@ -135,6 +159,8 @@ namespace SysEarth.Controllers
 
                 // Execute the command, even if we failed to retrieve the user's command and are using the default command
                 // Note - Each command is in charge of its own validation and if / how it executes after succeeding or failing validation
+                // TODO - Change functionality so that first we validate the command and then we choose how to proceed if validation fails
+                // TODO - Think about cases like if the validation fails and we want to instead show the user `help <commandName>`
                 var args = parsedUserSubmittedInput.Arguments?.ToArray();
                 var commandResponse = command.ExecuteCommand(args);
                 userInteractionResponse.AppendLine(commandResponse);

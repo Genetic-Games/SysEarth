@@ -36,15 +36,15 @@ namespace SysEarth.Commands
                 return false;
             }
 
-            if (args.Length >= 2)
-            {
-                responseMessage = $"Error - Invalid number of arguments to command `{GetCommandName()}`: {args.Length} arguments";
-                return false;
-            }
-
             if (args.FirstOrDefault() != GetCommandName())
             {
                 responseMessage = $"Error - Command `{GetCommandName()}` does not match input of `{args.FirstOrDefault()}`";
+                return false;
+            }
+
+            if (args.Length >= 2)
+            {
+                responseMessage = $"Error - Invalid number of arguments to command `{GetCommandName()}`: {args.Length} arguments";
                 return false;
             }
 

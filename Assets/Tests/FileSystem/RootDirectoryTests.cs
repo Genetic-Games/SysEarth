@@ -14,6 +14,16 @@ namespace SysEarth.Tests.FileSystem
         }
 
         [Test]
+        public void NewStateHasRootDirectoryNamedSlash()
+        {
+            var state = new FileSystemState();
+            var expected = "/";
+            var root = state.GetRootDirectory();
+            Assert.IsNotNull(root);
+            Assert.AreEqual(root.Name, expected);
+        }
+
+        [Test]
         public void NewStateRootDirectoryIsCurrentDirectory()
         {
             var state = new FileSystemState();

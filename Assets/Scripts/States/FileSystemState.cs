@@ -18,6 +18,7 @@ namespace SysEarth.States
 
             _rootDirectory = new Directory
             {
+                Name = "/",
                 Access = rootAccess
             };
             _currentDirectory = _rootDirectory;
