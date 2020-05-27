@@ -3,6 +3,7 @@ using SysEarth.Controllers;
 using SysEarth.Enums;
 using SysEarth.Models;
 using SysEarth.States;
+using System.Linq;
 
 namespace SysEarth.Tests.FileSystem
 {
@@ -17,21 +18,13 @@ namespace SysEarth.Tests.FileSystem
         }
 
         [Test]
-        public void NullDirectoryHasNullFilesInDirectory()
-        {
-            var filesInDirectory = _fileController.GetFilesInDirectory(null);
-            Assert.IsNull(filesInDirectory);
-        }
-
-        [Test]
         public void FilesInDirectoryDoNotExistUntilCreated()
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
 
-            var filesInDirectory = _fileController.GetFilesInDirectory(root);
-
-            Assert.IsNull(filesInDirectory);
+            Assert.IsNotNull(root.FilesInDirectory);
+            Assert.IsEmpty(root.FilesInDirectory);
         }
 
         [Test]
@@ -40,15 +33,17 @@ namespace SysEarth.Tests.FileSystem
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
 
-            var before = _fileController.GetFilesInDirectory(root);
+            // Need to store the boolean we want to test directly rather than the state 
+            // This is because the underlying state will change but the reference pointer will not, leading to incorrect testing behavior
+            var isFilesInDirectoryNullBeforeAdd = root.FilesInDirectory == null;
+            var isFilesInDirectoryPopulatedBeforeAdd = root.FilesInDirectory.Any();
             var isAddFileSuccess = _fileController.TryAddFile("Test", FileExtension.None, new Permission(), root, out var testFile);
 
-            var after = _fileController.GetFilesInDirectory(root);
-
             Assert.IsTrue(isAddFileSuccess);
-            Assert.IsNull(before);
-            Assert.IsNotNull(after);
-            Assert.That(after.Contains(testFile));
+            Assert.IsFalse(isFilesInDirectoryNullBeforeAdd);
+            Assert.IsFalse(isFilesInDirectoryPopulatedBeforeAdd);
+            Assert.IsNotNull(root.FilesInDirectory);
+            Assert.That(root.FilesInDirectory.Contains(testFile));
         }
 
         [Test]

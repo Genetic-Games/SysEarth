@@ -28,7 +28,8 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var current = state.GetCurrentDirectory();
-            Assert.IsNull(current.SubDirectories);
+            Assert.IsNotNull(current.SubDirectories);
+            Assert.IsEmpty(current.SubDirectories);
         }
 
         [Test]
@@ -36,7 +37,8 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var current = state.GetCurrentDirectory();
-            Assert.IsNull(current.FilesInDirectory);
+            Assert.IsNotNull(current.FilesInDirectory);
+            Assert.IsEmpty(current.FilesInDirectory);
         }
 
         [Test]

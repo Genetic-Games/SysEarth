@@ -11,9 +11,9 @@ namespace SysEarth.Commands
 
         // Interface Fields
         private readonly string _commandName = "clear";
-        private IDictionary<string, string> _flagDescriptions = null;
-        private string _commandDescription = "Clear the console of text";
-        private IList<string> _exampleUsages = new List<string> { "clear" };
+        private readonly IDictionary<string, string> _flagDescriptions = null;
+        private readonly string _commandDescription = "Clear the console of text";
+        private readonly IList<string> _exampleUsages = new List<string> { "clear" };
 
         // Interface Properties
         public string GetCommandName() => _commandName;

@@ -50,7 +50,7 @@ namespace SysEarth.Controllers
             _userInputParser = new UserInputParser();
 
             InitializeTerminalState(_terminalState);
-            InitializeCommandState(_commandState, _terminalState);
+            InitializeCommandState(_commandState, _terminalState, _fileSystemState);
             InitializeConsoleText(InputTextObject, addPrompt: true);
             InitializeConsoleText(OutputTextObject, addPrompt: false);
         }
@@ -78,7 +78,10 @@ namespace SysEarth.Controllers
             _userInterfaceController.SetUserInterfaceText(consoleText, string.Empty, addPrompt);
         }
 
-        private void InitializeCommandState(CommandState commandState, TerminalState terminalState)
+        private void InitializeCommandState(
+            CommandState commandState, 
+            TerminalState terminalState, 
+            FileSystemState fileSystemState)
         {
             var helpCommand = new HelpCommand(commandState);
             var isAddCommandSuccess = commandState.TryAddAvailableCommand(helpCommand.GetCommandName(), helpCommand);
@@ -89,6 +92,11 @@ namespace SysEarth.Controllers
             isAddCommandSuccess = commandState.TryAddAvailableCommand(clearCommand.GetCommandName(), clearCommand);
 
             Debug.Assert(isAddCommandSuccess, "Failed to add `clear` command to available command state");
+
+            var listCommand = new ListCommand(fileSystemState);
+            isAddCommandSuccess = commandState.TryAddAvailableCommand(listCommand.GetCommandName(), listCommand);
+
+            Debug.Assert(isAddCommandSuccess, "Failed to add `ls` command to available command state");
         }
 
         // Game Loop - Executed Once Per Frame

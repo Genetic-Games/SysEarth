@@ -2,6 +2,8 @@
 using SysEarth.Controllers;
 using SysEarth.Models;
 using SysEarth.States;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SysEarth.Tests.FileSystem
 {
@@ -16,20 +18,13 @@ namespace SysEarth.Tests.FileSystem
         }
 
         [Test]
-        public void NullDirectoryHasNullSubDirectories()
-        {
-            var subDirectories = _directoryController.GetSubDirectories(null);
-            Assert.IsNull(subDirectories);
-        }
-
-        [Test]
         public void SubDirectoriesDoNotExistUntilCreated()
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
-            var subDirectories = _directoryController.GetSubDirectories(root);
 
-            Assert.IsNull(subDirectories);
+            Assert.IsNotNull(root.SubDirectories);
+            Assert.IsEmpty(root.SubDirectories);
         }
 
         [Test]
@@ -37,22 +32,18 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
-            var before = _directoryController.GetSubDirectories(root);
+
+            // Need to store the boolean we want to test directly rather than the state 
+            // This is because the underlying state will change but the reference pointer will not, leading to incorrect testing behavior
+            var isSubDirectoriesNullBeforeAdd = root.SubDirectories == null;
+            var isSubDirectoriesPopulatedBeforeAdd = root.SubDirectories.Any();
             var isAddDirectorySuccess = _directoryController.TryAddDirectory("Test", new Permission(), root, out var testDirectory);
 
-            var after = _directoryController.GetSubDirectories(root);
-
             Assert.IsTrue(isAddDirectorySuccess);
-            Assert.IsNull(before);
-            Assert.IsNotNull(after);
-            Assert.That(after.Contains(testDirectory));
-        }
-
-        [Test]
-        public void NullDirectoryHasNullParentDirectory()
-        {
-            var parent = _directoryController.GetParentDirectory(null);
-            Assert.IsNull(parent);
+            Assert.IsFalse(isSubDirectoriesNullBeforeAdd);
+            Assert.IsFalse(isSubDirectoriesPopulatedBeforeAdd);
+            Assert.IsNotNull(root.SubDirectories);
+            Assert.That(root.SubDirectories.Contains(testDirectory));
         }
 
         [Test]
@@ -61,10 +52,9 @@ namespace SysEarth.Tests.FileSystem
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
             var isAddDirectorySuccess = _directoryController.TryAddDirectory("Test", new Permission(), root, out var testDirectory);
-            var parent = _directoryController.GetParentDirectory(testDirectory);
 
             Assert.IsTrue(isAddDirectorySuccess);
-            Assert.AreEqual(parent, root);
+            Assert.AreEqual(testDirectory.ParentDirectory, root);
         }
 
         [Test]

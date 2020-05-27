@@ -35,7 +35,8 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
-            Assert.IsNull(root.SubDirectories);
+            Assert.IsNotNull(root.SubDirectories);
+            Assert.IsEmpty(root.SubDirectories);
         }
 
         [Test]
@@ -43,7 +44,8 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
-            Assert.IsNull(root.FilesInDirectory);
+            Assert.IsNotNull(root.FilesInDirectory);
+            Assert.IsEmpty(root.FilesInDirectory);
         }
     }
 }
