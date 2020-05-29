@@ -83,6 +83,7 @@ namespace SysEarth.Commands
             var subDirectoryNames = currentDirectory.SubDirectories.Select(x => x.Name + _directoryIndicator).ToList();
 
             // Add `.` and `..` to the list of sub directory names implicitly (even if they are a wrapper of sorts)
+            // TODO - Should these only appear if we have passed an explicit flag to show hidden files and folders?  (How ls normally works)
             subDirectoryNames.Add(".");
             subDirectoryNames.Add("..");
 
