@@ -159,7 +159,7 @@ namespace SysEarth.Commands
 
         private string ChangeDirectoryViaAbsolutePath(string targetDirectoryPath)
         {
-            // TODO - When splitting, right now `/////home` results in just `/home` which is ... weird behavior.  Should fix.
+            // Note - When splitting, `/////home` results in just `/home` which is ... weird behavior.  But oddly enough, it's how `cd` normally behaves!
             var targetDirectoryNames = targetDirectoryPath.Split(_pathDelimiters.ToArray(), StringSplitOptions.RemoveEmptyEntries);
             var rootDirectory = _fileSystemState.GetRootDirectory();
 
@@ -188,7 +188,7 @@ namespace SysEarth.Commands
 
         private string ChangeDirectoryViaRelativePath(string targetDirectoryPath)
         {
-            // TODO - When splitting, right now `/////home` results in just `/home` which is ... weird behavior.  Should fix.
+            // Note - When splitting, `/////home` results in just `/home` which is ... weird behavior.  But oddly enough, it's how `cd` normally behaves!
             var targetDirectoryNames = targetDirectoryPath.Split(_pathDelimiters.ToArray(), StringSplitOptions.RemoveEmptyEntries);
             var currentDirectory = _fileSystemState.GetCurrentDirectory();
 
