@@ -7,6 +7,8 @@ namespace SysEarth.Commands
 {
     public class ListCommand : ICommand
     {
+        private const string _directoryIndicator = "/";
+
         // Class Specific Fields
         private readonly FileSystemState _fileSystemState;
 
@@ -78,7 +80,7 @@ namespace SysEarth.Commands
             responseMessage.AppendLine($"Contents of `{currentDirectory.Name}` Directory:");
 
             var fileNames = currentDirectory.FilesInDirectory.Select(x => x.Name);
-            var subDirectoryNames = currentDirectory.SubDirectories.Select(x => x.Name).ToList();
+            var subDirectoryNames = currentDirectory.SubDirectories.Select(x => x.Name + _directoryIndicator).ToList();
 
             // Add `.` and `..` to the list of sub directory names implicitly (even if they are a wrapper of sorts)
             subDirectoryNames.Add(".");
@@ -87,8 +89,6 @@ namespace SysEarth.Commands
             // Zip together all of the files and folder so that they can be displayed alphabetically
             var directoryContents = fileNames.Concat(subDirectoryNames).OrderBy(x => x);
 
-            // TODO - Figure out a way to differentiate between files and folders in the UI
-            // TODO - Put a slash after directory names to make them easier to distinguish
             foreach (var itemInDirectory in directoryContents)
             {
                 responseMessage.AppendLine(itemInDirectory);
