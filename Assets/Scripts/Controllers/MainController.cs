@@ -111,7 +111,7 @@ namespace SysEarth.Controllers
 
             Debug.Assert(isAddCommandSuccess, "Failed to add `clear` command to available command state");
 
-            var listCommand = new ListCommand(fileSystemState);
+            var listCommand = new ListCommand(fileSystemState, directoryController);
             isAddCommandSuccess = commandState.TryAddAvailableCommand(listCommand.GetCommandName(), listCommand);
 
             Debug.Assert(isAddCommandSuccess, "Failed to add `ls` command to available command state");

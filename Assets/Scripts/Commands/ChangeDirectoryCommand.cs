@@ -63,7 +63,7 @@ namespace SysEarth.Commands
                 return false;
             }
 
-            // User calls `cd <directoryName>` or `cd <directoryPath/directoryName>`
+            // User calls `cd <directoryName>` or `cd <directoryPath>/<directoryName>`
             if (args.Length == 2)
             {
                 responseMessage = "Command successfully validated";
@@ -104,7 +104,7 @@ namespace SysEarth.Commands
                 return ChangeDirectoryToParent(targetDirectoryName);
             }
 
-            // Will need to parse the argument to determine if there it is a directory or a path to one (fully qualified or relative)
+            // Will need to parse the argument to determine if it is a directory or a path to one (fully qualified or relative)
             // We can use the intersection of the delimiter list with the string (list of characters) to determine if any of the characters are a delimiter
             if (targetDirectoryName.Intersect(_pathDelimiters).Any())
             {
@@ -147,7 +147,7 @@ namespace SysEarth.Commands
 
         private string ChangeDirectoryViaPath(string targetDirectoryPath)
         {
-            // There are two options here - first is that  this is an absolute path, which means that the first character is a path delimiter
+            // There are two options here - first is that this is an absolute path, which means that the first character is a path delimiter
             if (_pathDelimiters.Contains(targetDirectoryPath.FirstOrDefault()))
             {
                 return ChangeDirectoryViaAbsolutePath(targetDirectoryPath);
