@@ -5,9 +5,31 @@ namespace SysEarth.Controllers
 {
     public class DirectoryController
     {
+        private const string _currentDirectorySymbol = ".";
+        private const string _parentDirectorySymbol = "..";
+
         public bool TryGetDirectory(string directoryName, Directory current, out Directory target)
         {
             target = null;
+
+            // Special case where current directory is requested
+            if (directoryName == _currentDirectorySymbol)
+            {
+                target = current;
+                return true;
+            }
+
+            // Special case where parent directory is requested
+            if (directoryName == _parentDirectorySymbol)
+            {
+                if (current?.ParentDirectory != null)
+                {
+                    target = current.ParentDirectory;
+                    return true;
+                }
+
+                return false;
+            }
 
             // Cannot get a subdirectory that does not exist
             if (current?.SubDirectories == null || !current.SubDirectories.Any(x => x.Name == directoryName))

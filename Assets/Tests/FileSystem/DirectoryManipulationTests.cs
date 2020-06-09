@@ -2,7 +2,6 @@
 using SysEarth.Controllers;
 using SysEarth.Models;
 using SysEarth.States;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace SysEarth.Tests.FileSystem
@@ -67,6 +66,45 @@ namespace SysEarth.Tests.FileSystem
 
             Assert.IsFalse(isGetDirectorySuccess);
             Assert.IsNull(target);
+        }
+
+        [Test]
+        public void CannotGetParentDirectoryOfRootDirectory()
+        {
+            var state = new FileSystemState();
+            var root = state.GetRootDirectory();
+
+            var isGetDirectorySuccess = _directoryController.TryGetDirectory("..", root, out var target);
+
+            Assert.IsFalse(isGetDirectorySuccess);
+            Assert.IsNull(target);
+        }
+
+        [Test]
+        public void CanGetParentDirectory()
+        {
+            var state = new FileSystemState();
+            var root = state.GetRootDirectory();
+
+            var isAddDirectorySuccess = _directoryController.TryAddDirectory("Test", new Permission(), root, out var testDirectory);
+            var isGetDirectorySuccess = _directoryController.TryGetDirectory("..", testDirectory, out var target);
+
+            Assert.IsTrue(isAddDirectorySuccess);
+            Assert.AreEqual(testDirectory.ParentDirectory, root);
+            Assert.IsTrue(isGetDirectorySuccess);
+            Assert.AreEqual(target, root);
+        }
+
+        [Test]
+        public void CanGetCurrentDirectory()
+        {
+            var state = new FileSystemState();
+            var root = state.GetRootDirectory();
+
+            var isGetDirectorySuccess = _directoryController.TryGetDirectory(".", root, out var target);
+
+            Assert.IsTrue(isGetDirectorySuccess);
+            Assert.AreEqual(target, root);
         }
 
         [Test]
