@@ -11,6 +11,9 @@ namespace SysEarth.Controllers
 {
     public class MainController : MonoBehaviour
     {
+        // Constants
+        private const string _helpCommandName = "help";
+
         // Scene References
         public Text InputTextObject;
         public Text OutputTextObject;
@@ -150,20 +153,24 @@ namespace SysEarth.Controllers
                     Debug.Log($"Failed to parse user input: `{userInteraction.SubmittedInput}`");
                 }
 
+                // Extract the arguments into a parameterized array
+                var args = parsedUserSubmittedInput.Arguments?.ToArray();
+
                 // Check to see that the we can retrieve the command the user wants to execute from the parsed input
                 var isCommandRetrievedSuccess = _commandController.TryGetCommand(_commandState, parsedUserSubmittedInput.CommandName, out var command);
                 if (!isCommandRetrievedSuccess)
                 {
                     userInteractionResponse.AppendLine($"Command `{parsedUserSubmittedInput.CommandName}` not found.");
+                    userInteractionResponse.AppendLine($"Run `{_helpCommandName}` for a list of available commands");
                 }
 
-                // Execute the command, even if we failed to retrieve the user's command and are using the default command
+                // Execute the command if we successfully retrieved it
                 // Note - Each command is in charge of its own validation and if / how it executes after succeeding or failing validation
-                // TODO - Change functionality so that first we validate the command and then we choose how to proceed if validation fails
-                // TODO - Think about cases like if the validation fails and we want to instead show the user `help <commandName>`
-                var args = parsedUserSubmittedInput.Arguments?.ToArray();
-                var commandResponse = command.ExecuteCommand(args);
-                userInteractionResponse.AppendLine(commandResponse);
+                else
+                {
+                    var commandResponse = command.ExecuteCommand(args);
+                    userInteractionResponse.AppendLine(commandResponse);
+                }
 
                 // Mark that the user's output will change based on this latest terminal command
                 userInteraction.IsOutputModified = true;
@@ -173,7 +180,7 @@ namespace SysEarth.Controllers
                     TerminalCommandOutput = userInteractionResponse.ToString(),
 
                     // If the command was a valid `clear` command, we do not want to show output for it, otherwise we do want output visible
-                    IsVisibleInTerminal = command.GetType() != typeof(ClearCommand) || !command.TryValidateArguments(out _, args)
+                    IsVisibleInTerminal = command == null || command.GetType() != typeof(ClearCommand) || !command.TryValidateArguments(out _, args)
                 };
 
                 // Add the input to the list of historical inputs if it is a valid input (not empty, null, or over the character limit)

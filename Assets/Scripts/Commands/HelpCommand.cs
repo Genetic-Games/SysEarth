@@ -14,7 +14,7 @@ namespace SysEarth.Commands
         private readonly string _commandName = "help";
         private readonly IDictionary<string, string> _flagDescriptions = null;
         private readonly string _commandDescription = "Get a list of the available commands or detailed information for a single command";
-        private readonly IList<string> _exampleUsages = new List<string> { "help", "help ls" };
+        private readonly IList<string> _exampleUsages = new List<string> { "help", "help ls", "help cd", "help clear" };
 
         // Interface Properties
         public string GetCommandName() => _commandName;
