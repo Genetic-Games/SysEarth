@@ -10,9 +10,14 @@ namespace SysEarth.Commands
 {
     public class ListCommand : ICommand
     {
+        // Class Specific Constants
         private const string _directoryIndicator = "/";
         private const string _currentDirectorySymbol = ".";
         private const string _parentDirectorySymbol = "..";
+
+        private const char _hiddenFileStartingCharacter = '.';
+        private const char _flagParameterStartingCharacter = '-';
+        private const char _showHiddenFilesFlag = 'a';
 
         private readonly IList<char> _pathDelimiters = new List<char> { '\\', '/' };
 
@@ -22,9 +27,12 @@ namespace SysEarth.Commands
 
         // Interface Fields
         private readonly string _commandName = "ls";
-        private readonly IDictionary<string, string> _flagDescriptions = null; // TODO - Add flags for ls
         private readonly string _commandDescription = "List the file contents of a target directory";
-        private readonly IList<string> _exampleUsages = new List<string> { "ls", "ls /", "ls ..", "ls home", "ls /home", "ls ../home" }; // TODO - Add more example usages with flags
+        private readonly IDictionary<string, string> _flagDescriptions = new Dictionary<string, string>
+        {
+            { $"{_flagParameterStartingCharacter}{_showHiddenFilesFlag}", "Show all files, including hidden ones that start with `.`" }
+        };
+        private readonly IList<string> _exampleUsages = new List<string> { "ls", "ls -a", "ls /", "ls ..", "ls home", "ls -a home", "ls /home", "ls ../home" };
 
         // Interface Properties
         public string GetCommandName() => _commandName;
@@ -54,23 +62,38 @@ namespace SysEarth.Commands
                 return false;
             }
 
-            // TODO - Change this validation so we can use flags if we want!
-            if (args.Length > 2)
+            // If the user specifies more than one target directory (or non-flag) input, the input is invalid
+            int targetDirectoryCounter = 0;
+            foreach (var arg in args)
             {
-                responseMessage = $"Error - Invalid number of arguments to command `{GetCommandName()}`: {args.Length} arguments";
+                if (arg == args.FirstOrDefault()) continue;
+
+                else if (arg.StartsWith(_flagParameterStartingCharacter.ToString()))
+                {
+                    continue;
+                }
+
+                else
+                {
+                    targetDirectoryCounter++;
+                }
+            }
+
+            if (targetDirectoryCounter > 1)
+            {
+                responseMessage = $"Error - More than one target directory specified as input to `{GetCommandName()}`";
                 return false;
             }
 
-            // TODO - Change this validation so we can use flags if we want!
-            // User calls `ls <directoryName>` or `ls <directoryPath>/<directoryName>`
-            if (args.Length == 2)
+            // User calls `ls [-<flags>] <directoryName>` or `ls [-<flags>] <directoryPath>/<directoryName>`
+            if (targetDirectoryCounter == 1)
             {
                 responseMessage = "Command successfully validated";
                 return true;
             }
 
-            // User calls `ls`
-            if (args.Length == 1)
+            // User calls `ls [-<flags>]`
+            if (targetDirectoryCounter == 0)
             {
                 responseMessage = "Command successfully validated";
                 return true;
@@ -90,10 +113,32 @@ namespace SysEarth.Commands
 
             // Extract the arguments and flags
             string targetDirectoryName = null;
+            bool showHiddenFiles = false;
 
+            // Ignore the first parameter because we know it is the command name since validation succeeded
             for (var i = 1; i < args.Length; i++)
             {
-                targetDirectoryName = args[i];
+                if (args[i].StartsWith(_flagParameterStartingCharacter.ToString(), StringComparison.InvariantCultureIgnoreCase))
+                {
+                    // Loop through all the flags provided like `-abcdefg` and extract each one as necessary
+                    var shortOptions = args[i];
+                    shortOptions = shortOptions.TrimStart(_flagParameterStartingCharacter);
+                    foreach (var shortOption in shortOptions)
+                    {
+                        if (shortOption.Equals(_showHiddenFilesFlag))
+                        {
+                            showHiddenFiles = true;
+                        }
+                        else
+                        {
+                            return $"Error - Unknown flag provided to `{GetCommandName()}`: `{shortOption}`";
+                        }
+                    }
+                }
+                else
+                {
+                    targetDirectoryName = args[i];
+                }
             }
 
             // Execute the valid command logic
@@ -147,11 +192,18 @@ namespace SysEarth.Commands
                 directoryContents = GetTargetDirectoryContents(targetDirectory);
             }
 
-            // TODO - Here is where flags should come into play, modifying output as needed or adding more color to each piece of data
+            // Now that we have directory contents, if the user wants to see hidden files, simply show them the contents unedited
+            // But add `.` and `..` to the list of sub directory names implicitly (even if they are a wrapper of sorts)
+            if (showHiddenFiles)
+            {
+                directoryContents = AddSymbolsToDirectoryContents(targetDirectory, directoryContents);
+            }
 
-            // Add `.` and `..` to the list of sub directory names implicitly (even if they are a wrapper of sorts)
-            // TODO - Should these only appear if we have passed an explicit flag to show hidden files and folders?  (How ls normally works)
-            directoryContents = AddSymbolsToDirectoryContents(targetDirectory, directoryContents);
+            // If the user did not specify they want to see hidden files, filter them out of the file list
+            else
+            {
+                directoryContents = RemoveHiddenFilesFromDirectoryContents(directoryContents);
+            }
 
             return FormatDirectoryContents(targetDirectory.Name, directoryContents);
         }
@@ -205,18 +257,23 @@ namespace SysEarth.Commands
 
         private IEnumerable<string> AddSymbolsToDirectoryContents(Directory targetDirectory, IEnumerable<string> currentDirectoryContents)
         {
-
             var symbolDirectories = new List<string>
             {
                 _currentDirectorySymbol + _directoryIndicator
             };
 
+            // Only want to add the parent directory symbo if a parent directory exists
             if (targetDirectory.ParentDirectory != null)
             {
                 symbolDirectories.Add(_parentDirectorySymbol + _directoryIndicator);
             }
 
             return symbolDirectories.Concat(currentDirectoryContents);
+        }
+
+        private IEnumerable<string> RemoveHiddenFilesFromDirectoryContents(IEnumerable<string> currentDirectoryContents)
+        {
+            return currentDirectoryContents.Where(x => x.StartsWith(_hiddenFileStartingCharacter.ToString()));
         }
 
         private string FormatDirectoryContents(string directoryName, IEnumerable<string> directoryContents)
