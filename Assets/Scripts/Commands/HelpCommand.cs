@@ -98,7 +98,7 @@ namespace SysEarth.Commands
                     responseMessage.AppendLine("Options:");
                     foreach (var flagDescription in flagDescriptions)
                     {
-                        responseMessage.AppendLine($"{flagDescription.Key} - {flagDescription.Value}");
+                        responseMessage.AppendLine($"  {flagDescription.Key} : {flagDescription.Value}");
                     }
                 }
 
@@ -108,7 +108,7 @@ namespace SysEarth.Commands
                     responseMessage.AppendLine("Example Usages:");
                     foreach (var exampleUsage in exampleUsages)
                     {
-                        responseMessage.AppendLine($"`{exampleUsage}`");
+                        responseMessage.AppendLine($"  {exampleUsage}");
                     }
                 }
             }

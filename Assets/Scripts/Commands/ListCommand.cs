@@ -12,12 +12,19 @@ namespace SysEarth.Commands
     {
         // Class Specific Constants
         private const string _directoryIndicator = "/";
+        private const string _hiddenFileIndicator = ".";
+
         private const string _currentDirectorySymbol = ".";
         private const string _parentDirectorySymbol = "..";
 
-        private const char _hiddenFileStartingCharacter = '.';
         private const char _flagParameterStartingCharacter = '-';
         private const char _showHiddenFilesFlag = 'a';
+        private const char _showFileListViewFlag = 'l';
+
+        private const string _readPermissionString = "R";
+        private const string _writePermissionString = "W";
+        private const string _executePermissionString = "X";
+        private const string _noPermissionString = "-";
 
         private readonly IList<char> _pathDelimiters = new List<char> { '\\', '/' };
 
@@ -30,9 +37,10 @@ namespace SysEarth.Commands
         private readonly string _commandDescription = "List the file contents of a target directory";
         private readonly IDictionary<string, string> _flagDescriptions = new Dictionary<string, string>
         {
-            { $"{_flagParameterStartingCharacter}{_showHiddenFilesFlag}", "Show all files, including hidden ones that start with `.`" }
+            { $"{_flagParameterStartingCharacter}{_showHiddenFilesFlag}", $"Show all files, including hidden ones that start with `{_hiddenFileIndicator}`" },
+            { $"{_flagParameterStartingCharacter}{_showFileListViewFlag}", "Show long list format of directory contents, including file permissions" }
         };
-        private readonly IList<string> _exampleUsages = new List<string> { "ls", "ls -a", "ls /", "ls ..", "ls home", "ls -a home", "ls /home", "ls ../home" };
+        private readonly IList<string> _exampleUsages = new List<string> { "ls", "ls -al", "ls /", "ls ..", "ls home", "ls -a home", "ls /home", "ls -l ../home" };
 
         // Interface Properties
         public string GetCommandName() => _commandName;
@@ -114,6 +122,7 @@ namespace SysEarth.Commands
             // Extract the arguments and flags
             string targetDirectoryName = null;
             bool showHiddenFiles = false;
+            bool showFileListView = false;
 
             // Ignore the first parameter because we know it is the command name since validation succeeded
             for (var i = 1; i < args.Length; i++)
@@ -129,6 +138,10 @@ namespace SysEarth.Commands
                         {
                             showHiddenFiles = true;
                         }
+                        else if (shortOption.Equals(_showFileListViewFlag))
+                        {
+                            showFileListView = true;
+                        }
                         else
                         {
                             return $"Error - Unknown flag provided to `{GetCommandName()}`: `{shortOption}`";
@@ -143,20 +156,17 @@ namespace SysEarth.Commands
 
             // Execute the valid command logic
             Directory targetDirectory = null;
-            IEnumerable<string> directoryContents = null;
 
             // Handle the special case where the user wants to list the contents of the `/` or '\' directory (root)
             if (targetDirectoryName != null && targetDirectoryName.Length == 1 && _pathDelimiters.Contains(targetDirectoryName.FirstOrDefault()))
             {
                 targetDirectory = _fileSystemState.GetRootDirectory();
-                directoryContents = GetTargetDirectoryContents(targetDirectory);
             }
 
             // Handle the special case where the user wants to list the contents of the `.` directory (current directory)
             if (targetDirectoryName != null && targetDirectoryName.Equals(_currentDirectorySymbol, StringComparison.InvariantCultureIgnoreCase))
             {
                 targetDirectory = _fileSystemState.GetCurrentDirectory();
-                directoryContents = GetTargetDirectoryContents(targetDirectory);
             }
 
             // Handle the special case where the user wants to change directory to `..` (parent directory)
@@ -168,8 +178,6 @@ namespace SysEarth.Commands
                 {
                     return $"Error - Failed to find parent directory for `{currentDirectory.Name}`";
                 }
-
-                directoryContents = GetTargetDirectoryContents(targetDirectory);
             }
 
             // Handle the special case where the user has supplied a directory name or path they wish to see the contents of
@@ -180,32 +188,23 @@ namespace SysEarth.Commands
                 {
                     return errorMessage;
                 }
-
-                directoryContents = GetTargetDirectoryContents(targetDirectory);
             }
 
-            // At this point, if we do not already have contents built, the user did not specify a target directory to see its contents
+            // At this point, if we do not already have a target directory, the user did not specify a target directory to see its contents
             // If that is the case, use the "default" target directory - the current working directory
-            if (directoryContents == null)
+            if (targetDirectory == null)
             {
                 targetDirectory = _fileSystemState.GetCurrentDirectory();
-                directoryContents = GetTargetDirectoryContents(targetDirectory);
             }
-
-            // Now that we have directory contents, if the user wants to see hidden files, simply show them the contents unedited
-            // But add `.` and `..` to the list of sub directory names implicitly (even if they are a wrapper of sorts)
-            if (showHiddenFiles)
+            
+            // If the user specified that they want to see the long list view, show them that view
+            if (showFileListView)
             {
-                directoryContents = AddSymbolsToDirectoryContents(targetDirectory, directoryContents);
+                return FormatDirectoryContentsForLongView(targetDirectory, showHiddenFiles);
             }
 
-            // If the user did not specify they want to see hidden files, filter them out of the file list
-            else
-            {
-                directoryContents = RemoveHiddenFilesFromDirectoryContents(directoryContents);
-            }
-
-            return FormatDirectoryContents(targetDirectory.Name, directoryContents);
+            // Otherwise, show them the default view
+            return FormatDirectoryContents(targetDirectory, showHiddenFiles);
         }
 
         private bool TryGetTargetDirectory(string targetDirectoryPath, out Directory targetDirectory, out string errorMessage)
@@ -245,52 +244,121 @@ namespace SysEarth.Commands
             return true;
         }
 
-        private IEnumerable<string> GetTargetDirectoryContents(Directory targetDirectory)
+        private string GetAccessString(Permission access)
         {
-            // Build a list of all the files and sub-directories in the target directory
-            var fileNames = targetDirectory.FilesInDirectory.Select(x => x.Name);
-            var subDirectoryNames = targetDirectory.SubDirectories.Select(x => x.Name + _directoryIndicator);
+            var read = access.Read ? _readPermissionString : _noPermissionString;
+            var write = access.Write ? _writePermissionString : _noPermissionString;
+            var execute = access.Execute ? _executePermissionString : _noPermissionString;
 
-            // Zip together all of the files and subdirectories in this directory
-            return fileNames.Concat(subDirectoryNames);
+            return $"{read} {write} {execute}";
         }
 
-        private IEnumerable<string> AddSymbolsToDirectoryContents(Directory targetDirectory, IEnumerable<string> currentDirectoryContents)
+        private string FormatDirectoryContentsForLongView(Directory targetDirectory, bool showHiddenFiles)
         {
-            var symbolDirectories = new List<string>
-            {
-                _currentDirectorySymbol + _directoryIndicator
-            };
+            // Build a long view output list of all the files and sub-directories in the target directory with their permissions
+            var responseMessage = new StringBuilder();
+            responseMessage.AppendLine($"Contents of `{targetDirectory.Name}` Directory:");
 
-            // Only want to add the parent directory symbo if a parent directory exists
-            if (targetDirectory.ParentDirectory != null)
+            // Build a sorted dictionary of item name to output string for that item so we can easily build the response in order later
+            var directoryContents = new SortedDictionary<string, string>();
+            foreach (var fileInDirectory in targetDirectory.FilesInDirectory)
             {
-                symbolDirectories.Add(_parentDirectorySymbol + _directoryIndicator);
+                // If the user did not specify seeing hidden files and the file name starts with a hidden character, hide it from the user
+                if (showHiddenFiles || !fileInDirectory.Name.StartsWith(_hiddenFileIndicator))
+                {
+                    directoryContents.Add(fileInDirectory.Name, $"{GetAccessString(fileInDirectory.Access)}   {fileInDirectory.Name}");
+                }
             }
 
-            return symbolDirectories.Concat(currentDirectoryContents);
-        }
+            foreach (var subDirectoryInDirectory in targetDirectory.SubDirectories)
+            {
+                // If the user did not specify seeing hidden files and the file name starts with a hidden character, hide it from the user
+                if (showHiddenFiles || !subDirectoryInDirectory.Name.StartsWith(_hiddenFileIndicator))
+                {
+                    directoryContents.Add(subDirectoryInDirectory.Name, $"{GetAccessString(subDirectoryInDirectory.Access)}   {subDirectoryInDirectory.Name}{_directoryIndicator}");
+                }
+            }
 
-        private IEnumerable<string> RemoveHiddenFilesFromDirectoryContents(IEnumerable<string> currentDirectoryContents)
-        {
-            return currentDirectoryContents.Where(x => x.StartsWith(_hiddenFileStartingCharacter.ToString()));
-        }
+            // If the user wants to see hidden files, add `.` and `..` to the list of sub directory names implicitly
+            if (showHiddenFiles)
+            {
+                directoryContents = AddSymbolsToDirectoryContentsForLongView(targetDirectory, directoryContents);
+            }
 
-        private string FormatDirectoryContents(string directoryName, IEnumerable<string> directoryContents)
-        {
-            // Build an output list of all the files and sub-directories in the target directory
-            var responseMessage = new StringBuilder();
-            responseMessage.AppendLine($"Contents of `{directoryName}` Directory:");
-
-            // Order all of the files and folder so that they can be displayed alphabetically
-            directoryContents = directoryContents.OrderBy(x => x);
-
-            foreach (var itemInDirectory in directoryContents)
+            // Build the response knowing that the the items are ordered ordering by key (which is file / folder name)
+            foreach (var itemInDirectory in directoryContents.Values)
             {
                 responseMessage.AppendLine(itemInDirectory);
             }
 
             return responseMessage.ToString();
+        }
+
+        private string FormatDirectoryContents(Directory targetDirectory, bool showHiddenFiles)
+        {
+            // Build an output list of all the files and sub-directories in the target directory
+            var responseMessage = new StringBuilder();
+            responseMessage.AppendLine($"Contents of `{targetDirectory.Name}` Directory:");
+
+            // Build a sorted dictionary of item name to output string for that item so we can easily build the response in order later
+            var directoryContents = new SortedDictionary<string, string>();
+            foreach (var fileInDirectory in targetDirectory.FilesInDirectory)
+            {
+                // If the user did not specify seeing hidden files and the file name starts with a hidden character, hide it from the user
+                if (showHiddenFiles || !fileInDirectory.Name.StartsWith(_hiddenFileIndicator))
+                {
+                    directoryContents.Add(fileInDirectory.Name, $"{fileInDirectory.Name}");
+                }
+            }
+
+            foreach (var subDirectoryInDirectory in targetDirectory.SubDirectories)
+            {
+                // If the user did not specify seeing hidden files and the file name starts with a hidden character, hide it from the user
+                if (showHiddenFiles || !subDirectoryInDirectory.Name.StartsWith(_hiddenFileIndicator))
+                {
+                    directoryContents.Add(subDirectoryInDirectory.Name, $"{subDirectoryInDirectory.Name}{_directoryIndicator}");
+                }
+            }
+
+            // If the user wants to see hidden files, add `.` and `..` to the list of sub directory names implicitly
+            if (showHiddenFiles)
+            {
+                directoryContents = AddSymbolsToDirectoryContents(targetDirectory, directoryContents);
+            }
+
+            // Build the response knowing that the the items are ordered ordering by key (which is file / folder name)
+            foreach (var itemInDirectory in directoryContents.Values)
+            {
+                responseMessage.AppendLine(itemInDirectory);
+            }
+
+            return responseMessage.ToString();
+        }
+
+        private SortedDictionary<string, string> AddSymbolsToDirectoryContents(Directory targetDirectory, SortedDictionary<string, string> currentDirectoryContents)
+        {
+            currentDirectoryContents.Add($"{_currentDirectorySymbol}{_directoryIndicator}", $"{_currentDirectorySymbol}{_directoryIndicator}");
+
+            // Only want to add the parent directory symbol if a parent directory exists
+            if (targetDirectory.ParentDirectory != null)
+            {
+                currentDirectoryContents.Add($"{_parentDirectorySymbol}{_directoryIndicator}", $"{_parentDirectorySymbol}{_directoryIndicator}");
+            }
+
+            return currentDirectoryContents;
+        }
+
+        private SortedDictionary<string, string> AddSymbolsToDirectoryContentsForLongView(Directory targetDirectory, SortedDictionary<string, string> currentDirectoryContents)
+        {
+            currentDirectoryContents.Add($"{_currentDirectorySymbol}", $"{GetAccessString(targetDirectory.Access)}   {_currentDirectorySymbol}{_directoryIndicator}");
+
+            // Only want to add the parent directory symbol if a parent directory exists
+            if (targetDirectory.ParentDirectory != null)
+            {
+                currentDirectoryContents.Add($"{_parentDirectorySymbol}", $"{GetAccessString(targetDirectory.ParentDirectory.Access)}   {_parentDirectorySymbol}{_directoryIndicator}");
+            }
+
+            return currentDirectoryContents;
         }
     }
 }
