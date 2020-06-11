@@ -1,4 +1,5 @@
 ﻿using SysEarth.Controllers;
+using SysEarth.Enums;
 using SysEarth.Models;
 using SysEarth.States;
 using System;
@@ -266,7 +267,10 @@ namespace SysEarth.Commands
                 // If the user did not specify seeing hidden files and the file name starts with a hidden character, hide it from the user
                 if (showHiddenFiles || !fileInDirectory.Name.StartsWith(_hiddenFileIndicator))
                 {
-                    directoryContents.Add(fileInDirectory.Name, $"{GetAccessString(fileInDirectory.Access)}   {fileInDirectory.Name}");
+                    var fileExtension = fileInDirectory.Extension == FileExtension.None
+                        ? string.Empty
+                        : $".{fileInDirectory.Extension.ToString()}";
+                    directoryContents.Add(fileInDirectory.Name, $"{GetAccessString(fileInDirectory.Access)}   {fileInDirectory.Name}{fileExtension}");
                 }
             }
 
@@ -307,7 +311,10 @@ namespace SysEarth.Commands
                 // If the user did not specify seeing hidden files and the file name starts with a hidden character, hide it from the user
                 if (showHiddenFiles || !fileInDirectory.Name.StartsWith(_hiddenFileIndicator))
                 {
-                    directoryContents.Add(fileInDirectory.Name, $"{fileInDirectory.Name}");
+                    var fileExtension = fileInDirectory.Extension == FileExtension.None
+                        ? string.Empty
+                        : $".{fileInDirectory.Extension.ToString()}";
+                    directoryContents.Add(fileInDirectory.Name, $"{fileInDirectory.Name}{fileExtension}");
                 }
             }
 

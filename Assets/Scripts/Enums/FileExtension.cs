@@ -8,9 +8,9 @@ namespace SysEarth.Enums
         None,
 
         [Description("Text")]
-        Txt,
+        txt,
 
         [Description("Executable")]
-        Exe
+        exe
     }
 }

@@ -1,4 +1,5 @@
 ﻿using SysEarth.Commands;
+using SysEarth.Initializers;
 using SysEarth.Models;
 using SysEarth.Parsers;
 using SysEarth.States;
@@ -9,7 +10,7 @@ using UnityEngine.UI;
 
 namespace SysEarth.Controllers
 {
-    public class MainController : MonoBehaviour
+    public class GameController : MonoBehaviour
     {
         // Constants
         private const string _helpCommandName = "help";
@@ -37,6 +38,12 @@ namespace SysEarth.Controllers
         // Parsers
         private UserInputParser _userInputParser;
 
+        // Initializers
+        private TerminalStateInitializer _terminalStateInitializer;
+        private FileSystemStateInitializer _fileSystemStateInitializer;
+        private CommandStateInitializer _commandStateInitializer;
+        private UserInterfaceInitializer _userInterfaceInitializer;
+
         // Initialization
         public void Start()
         {
@@ -50,79 +57,23 @@ namespace SysEarth.Controllers
             _userInterfaceController = new UserInterfaceController();
             _commandController = new CommandController();
 
+            _terminalStateInitializer = new TerminalStateInitializer();
+            _fileSystemStateInitializer = new FileSystemStateInitializer();
+            _commandStateInitializer = new CommandStateInitializer();
+            _userInterfaceInitializer = new UserInterfaceInitializer();
+
             _userInputParser = new UserInputParser();
 
-            // TODO - Move initialization of all of these pieces to a separate folder with classes (i.e. - Initializers)
-            InitializeTerminalState(_terminalState);
-            InitializeFileSystemState(_fileSystemState, _directoryController, _fileController);
-            InitializeCommandState(_commandState, _terminalState, _fileSystemState, _directoryController);
-            InitializeConsoleText(InputTextObject, addPrompt: true);
-            InitializeConsoleText(OutputTextObject, addPrompt: false);
-        }
+            // Initialize the state of each system piece for game start
+            _terminalStateInitializer.InitializeTerminalState(_terminalState, InputLengthCharacterLimit, InputHistoryLimit);
+            _terminalStateInitializer.ClearTerminalState(_terminalState);
 
-        private void InitializeTerminalState(TerminalState terminalState)
-        {
-            terminalState.ClearCurrentInput();
-            terminalState.ClearPreviousCommands();
+            var commandsInitialized = _commandStateInitializer.InitializeCommandState(_commandState, _terminalState, _fileSystemState, _directoryController);
+            _fileSystemStateInitializer.InitializeFileSystemState(_fileSystemState, _permissionController, _directoryController);
+            _fileSystemStateInitializer.InitializeCommandsInFileSystemState(_fileSystemState, _permissionController, _directoryController, _fileController, commandsInitialized);
 
-            Debug.Assert(InputLengthCharacterLimit > 0, "Input length character limit is invalid.");
-            Debug.Assert(InputHistoryLimit > 0, "Input history limit is invalid.");
-
-            var isInputLengthSetSuccess = terminalState.TrySetTerminalInputLengthLimit(InputLengthCharacterLimit);
-            var isInputHistorySetSuccess = terminalState.TrySetCommandHistoryLimit(InputHistoryLimit);
-
-            Debug.Assert(isInputLengthSetSuccess, "Failed to set maximum input length.");
-            Debug.Assert(isInputHistorySetSuccess, "Failed to set maximum input history limit.");
-        }
-
-        private void InitializeFileSystemState(FileSystemState fileSystemState, DirectoryController directoryController, FileController fileController)
-        {
-            // TODO - Make it so that all actions are permission based (add requires write access, so does delete, need read access to look at anything, execute to run something, etc)
-            var root = fileSystemState.GetRootDirectory();
-            var homeDirectoryPermission = new Permission
-            {
-                Read = true,
-                Execute = true
-            };
-
-            var isAddHomeDirectorySuccess = directoryController.TryAddDirectory("home", homeDirectoryPermission, root, out var homeDirectory);
-
-            Debug.Assert(isAddHomeDirectorySuccess, "Failed to add `home` directory under `root` directory");
-        }
-
-        private void InitializeConsoleText(Text consoleText, bool addPrompt = false)
-        {
-            Debug.Assert(consoleText != null, "A console text object is not properly set.");
-
-            // Ensure that the console text is empty to start
-            _userInterfaceController.SetUserInterfaceText(consoleText, string.Empty, addPrompt);
-        }
-
-        private void InitializeCommandState(
-            CommandState commandState, 
-            TerminalState terminalState, 
-            FileSystemState fileSystemState,
-            DirectoryController directoryController)
-        {
-            var helpCommand = new HelpCommand(commandState);
-            var isAddCommandSuccess = commandState.TryAddAvailableCommand(helpCommand.GetCommandName(), helpCommand);
-
-            Debug.Assert(isAddCommandSuccess, "Failed to add `help` command to available command state");
-
-            var clearCommand = new ClearCommand(terminalState);
-            isAddCommandSuccess = commandState.TryAddAvailableCommand(clearCommand.GetCommandName(), clearCommand);
-
-            Debug.Assert(isAddCommandSuccess, "Failed to add `clear` command to available command state");
-
-            var listCommand = new ListCommand(fileSystemState, directoryController);
-            isAddCommandSuccess = commandState.TryAddAvailableCommand(listCommand.GetCommandName(), listCommand);
-
-            Debug.Assert(isAddCommandSuccess, "Failed to add `ls` command to available command state");
-
-            var changeDirectoryCommand = new ChangeDirectoryCommand(fileSystemState, directoryController);
-            isAddCommandSuccess = commandState.TryAddAvailableCommand(changeDirectoryCommand.GetCommandName(), changeDirectoryCommand);
-
-            Debug.Assert(isAddCommandSuccess, "Failed to add `cd` command to available command state");
+            _userInterfaceInitializer.InitializeConsoleText(_userInterfaceController, InputTextObject, addPrompt: true);
+            _userInterfaceInitializer.InitializeConsoleText(_userInterfaceController, OutputTextObject, addPrompt: false);
         }
 
         // Game Loop - Executed Once Per Frame
