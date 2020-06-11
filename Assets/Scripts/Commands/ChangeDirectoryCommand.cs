@@ -10,6 +10,8 @@ namespace SysEarth.Commands
     {
         private const string _currentDirectorySymbol = ".";
         private const string _parentDirectorySymbol = "..";
+        private const string _homeDirectorySymbol = "~";
+        private const string _homeDirectoryName = "home";
 
         private readonly IList<char> _pathDelimiters = new List<char> { '\\', '/' };
 
@@ -101,7 +103,13 @@ namespace SysEarth.Commands
             // Handle the special case where the user wants to change directory to `..` (parent directory)
             if (targetDirectoryName.Equals(_parentDirectorySymbol, StringComparison.InvariantCultureIgnoreCase))
             {
-                return ChangeDirectoryToParent(targetDirectoryName);
+                return ChangeDirectoryToParent();
+            }
+
+            // Handle the special case where the user wants to change directory to `~` (home directory)
+            if (targetDirectoryName.Equals(_homeDirectorySymbol, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return ChangeDirectoryToHome();
             }
 
             // Will need to parse the argument to determine if it is a directory or a path to one (fully qualified or relative)
@@ -128,7 +136,7 @@ namespace SysEarth.Commands
             return "Current working directory changed";
         }
 
-        private string ChangeDirectoryToParent(string targetDirectoryName)
+        private string ChangeDirectoryToParent()
         {
             var currentDirectory = _fileSystemState.GetCurrentDirectory();
             if (currentDirectory.ParentDirectory == null)
@@ -136,13 +144,31 @@ namespace SysEarth.Commands
                 return $"Error - Failed to find parent directory for `{currentDirectory.Name}`";
             }
 
-            var isParentDirectorySetSuccess = _fileSystemState.TrySetCurrentDirectory(currentDirectory.ParentDirectory);
-            if (!isParentDirectorySetSuccess)
+            var isSetCurrentDirectoryAsParentDirectorySuccess = _fileSystemState.TrySetCurrentDirectory(currentDirectory.ParentDirectory);
+            if (!isSetCurrentDirectoryAsParentDirectorySuccess)
             {
                 return $"Error - Failed to set current directory to parent directory: `{currentDirectory.ParentDirectory.Name}";
             }
 
             return "Current working directory changed";
+        }
+
+        private string ChangeDirectoryToHome()
+        {
+            var rootDirectory = _fileSystemState.GetRootDirectory();
+            var isGetHomeDirectorySuccess = _directoryController.TryGetDirectory(_homeDirectoryName, rootDirectory, out var homeDirectory);
+            if (!isGetHomeDirectorySuccess)
+            {
+                return $"Error - Failed to get `{_homeDirectoryName}` directory in `{rootDirectory.Name}`";
+            }
+
+            var isSetCurrentDirectoryAsHomeSuccess = _fileSystemState.TrySetCurrentDirectory(homeDirectory);
+            if (!isSetCurrentDirectoryAsHomeSuccess)
+            {
+                return $"Error - Failed to set current directory to `{_homeDirectoryName}` directory";
+            }
+
+            return $"Current working directory changed";
         }
 
         private string ChangeDirectoryViaPath(string targetDirectoryPath)
@@ -192,11 +218,44 @@ namespace SysEarth.Commands
             var targetDirectoryNames = targetDirectoryPath.Split(_pathDelimiters.ToArray(), StringSplitOptions.RemoveEmptyEntries);
             var currentDirectory = _fileSystemState.GetCurrentDirectory();
 
+            if (targetDirectoryNames.FirstOrDefault() == _homeDirectorySymbol)
+            {
+                var rootDirectory = _fileSystemState.GetRootDirectory();
+                var isGetHomeDirectorySuccess = _directoryController.TryGetDirectory(_homeDirectoryName, rootDirectory, out var homeDirectory);
+                if (!isGetHomeDirectorySuccess)
+                {
+                    return $"Error - Failed to get `{_homeDirectoryName}` directory in `{rootDirectory.Name}`";
+                }
+            }
+
             // Starting with the current directory, loop through the given directory names until we get to the end with the final target directory (or failure)
             var targetDirectory = currentDirectory;
+            var isHomeDirectorySymbolFirst = false;
+
+            // But first, handle the special case of the first character being the home directory symbol `~`
+            if (targetDirectoryNames.FirstOrDefault() == _homeDirectorySymbol)
+            {
+                isHomeDirectorySymbolFirst = true;
+
+                var rootDirectory = _fileSystemState.GetRootDirectory();
+                var isGetHomeDirectorySuccess = _directoryController.TryGetDirectory(_homeDirectoryName, rootDirectory, out targetDirectory);
+                if (!isGetHomeDirectorySuccess)
+                {
+                    return $"Error - Failed to get `{_homeDirectoryName}` directory in `{rootDirectory.Name}`";
+                }
+            }
+
+            // Okay, now actually loop through and check!
             foreach (var nextTargetDirectoryName in targetDirectoryNames)
             {
                 // Since this is a relative path, we could come across special relative path characters, so we should check for those
+                // Home directory symbol `~` case (which is only valid if the symbol is the first character, but we have already addressed that)
+                if (isHomeDirectorySymbolFirst && nextTargetDirectoryName == _homeDirectorySymbol)
+                {
+                    continue;
+                }
+
+                // Parent directory symbol `..` case
                 if (nextTargetDirectoryName == _parentDirectorySymbol)
                 {
                     if (targetDirectory.ParentDirectory == null)
@@ -208,11 +267,13 @@ namespace SysEarth.Commands
                     continue;
                 }
 
+                // Current directory symbol `.` case
                 if (nextTargetDirectoryName == _currentDirectorySymbol)
                 {
                     continue;
                 }
 
+                // Regular directory name case
                 var isDirectoryRetrievalSuccess = _directoryController.TryGetDirectory(nextTargetDirectoryName, targetDirectory, out var foundDirectory);
                 if (!isDirectoryRetrievalSuccess)
                 {
