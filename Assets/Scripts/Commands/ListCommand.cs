@@ -17,6 +17,7 @@ namespace SysEarth.Commands
 
         private const string _currentDirectorySymbol = ".";
         private const string _parentDirectorySymbol = "..";
+        private const string _homeDirectorySymbol = "~";
 
         private const char _flagParameterStartingCharacter = '-';
         private const char _showHiddenFilesFlag = 'a';
@@ -210,24 +211,38 @@ namespace SysEarth.Commands
 
         private bool TryGetTargetDirectory(string targetDirectoryPath, out Directory targetDirectory, out string errorMessage)
         {
-            // There are two options here - first is that this is an absolute path, which means that the first character is a path delimiter
+            // There are three options here - first is that this is an absolute path, which means that the first character is a path delimiter
             if (_pathDelimiters.Contains(targetDirectoryPath.FirstOrDefault()))
             {
                 var rootDirectory = _fileSystemState.GetRootDirectory();
                 return TryGetTargetDirectory(rootDirectory, targetDirectoryPath, out targetDirectory, out errorMessage);
             }
 
-            // Second is that this is a relative path, which means that the current directory is the starting point of the path
+            // Second is that this is a relative path, but begins with a `~` symbol, which means the home directory is the starting point of the path
+            if (_homeDirectorySymbol.Equals(targetDirectoryPath.FirstOrDefault().ToString(), StringComparison.InvariantCultureIgnoreCase))
+            {
+                var rootDirectory = _fileSystemState.GetRootDirectory();
+                var isGetHomeDirectorySuccess = _directoryController.TryGetDirectory("home", rootDirectory, out var homeDirectory);
+                return TryGetTargetDirectory(homeDirectory, targetDirectoryPath, out targetDirectory, out errorMessage, ignoreFirstHomeSymbol: true);
+            }
+
+            // Third is that this is a relative path that does not begin with a `~` symbol, which means that the current directory is the starting point of the path
             var currentDirectory = _fileSystemState.GetCurrentDirectory();
             return TryGetTargetDirectory(currentDirectory, targetDirectoryPath, out targetDirectory, out errorMessage);
         }
 
-        private bool TryGetTargetDirectory(Directory startingDirectory, string targetDirectoryPath, out Directory targetDirectory, out string errorMessage)
+        private bool TryGetTargetDirectory(Directory startingDirectory, string targetDirectoryPath, out Directory targetDirectory, out string errorMessage, bool ignoreFirstHomeSymbol = false)
         {
             // Note - When splitting, `/////home` results in just `/home` which is ... weird behavior.  But oddly enough, it's how `ls` normally behaves!
-            var targetDirectoryNames = targetDirectoryPath.Split(_pathDelimiters.ToArray(), StringSplitOptions.RemoveEmptyEntries);
+            var targetDirectoryNames = targetDirectoryPath.Split(_pathDelimiters.ToArray(), StringSplitOptions.RemoveEmptyEntries).ToList();
 
-            // Starting with the root directory, loop through the given directory names until we get to the end with the final target directory (or failure)
+            // Manually ignore the first character if it is a home symbol `~` since it has already been addressed with the starting directory
+            if (ignoreFirstHomeSymbol && targetDirectoryNames.FirstOrDefault().Equals(_homeDirectorySymbol, StringComparison.InvariantCultureIgnoreCase))
+            {
+                targetDirectoryNames.RemoveAt(0);
+            }
+
+            // Starting at the passed in directory, loop through the given directory names until we get to the end with the final target directory (or failure)
             targetDirectory = startingDirectory;
             foreach (var nextTargetDirectoryName in targetDirectoryNames)
             {
