@@ -10,6 +10,9 @@ namespace SysEarth.Controllers
         private const string _currentDirectorySymbol = ".";
         private const string _parentDirectorySymbol = "..";
         private const string _rootDirectorySymbol = "/";
+        private const string _homeDirectorySymbol = "~";
+
+        private const string _homeDirectoryIndicator = "home";
         private const string _directoryIndicator = "/";
 
         public bool TryGetDirectory(string directoryName, Directory current, out Directory target)
@@ -103,12 +106,16 @@ namespace SysEarth.Controllers
                 target = target.ParentDirectory;
             }
 
-            // Finish by adding an "empty string" directory (which will materialize as root `/` when we join below)
+            // Finish the path list by adding an "empty string" directory (which will materialize as root `/` when we join below)
             directoryNames.Add(string.Empty);
 
             // Spin the list around so it is in the larger to smaller direction (root to target, left to right)
             directoryNames.Reverse();
-            return string.Join(_directoryIndicator, directoryNames);
+            var fullyQualifiedPathString = string.Join(_directoryIndicator, directoryNames);
+
+            // Finally, check if a replacement for the home directory can be made to make the path shorter and easier to use
+            var shortenedPathString = fullyQualifiedPathString.Replace($"{_rootDirectorySymbol}{_homeDirectoryIndicator}", _homeDirectorySymbol);
+            return shortenedPathString;
         }
     }
 }

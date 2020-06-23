@@ -199,6 +199,7 @@ namespace SysEarth.Controllers
             return null;
         }
 
+        // TODO - Add username here before path, similar to Bash
         public void SetUserInterfaceTextWithInputPrompt(Text textObject, string updatedText, string currentDirectoryPath = null)
         {
             // If the updated text is null, that signifies there should be no update for the text to the user
