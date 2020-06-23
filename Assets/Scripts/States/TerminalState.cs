@@ -9,6 +9,8 @@ namespace SysEarth.States
         private int _terminalCommandHistoryLimit;
         private int _terminalInputLengthLimit;
         private string _currentTerminalInput;
+        private uint _terminalCommandSubmissionNumber;
+        private uint? _terminalCommandSelectedNumber;
         private IList<TerminalCommand> _previousTerminalCommands;
 
         public TerminalState()
@@ -29,6 +31,33 @@ namespace SysEarth.States
         public string GetCurrentInput()
         {
             return _currentTerminalInput;
+        }
+
+        // TODO - Write unit tests for command submission number accessors
+        public uint GetTerminalCommandSubmissionNumber()
+        {
+            return _terminalCommandSubmissionNumber;
+        }
+
+        public void IncrementTerminalCommandSubmissionNumber()
+        {
+            _terminalCommandSubmissionNumber++;
+        }
+
+        // TODO - Write unit tests for command selected accessors
+        public ulong? GetTerminalCommandSelectedNumber()
+        {
+            return _terminalCommandSelectedNumber;
+        }
+
+        public void SetTerminalCommandSelectedNumber(uint selectedCommandNumber)
+        {
+            _terminalCommandSelectedNumber = selectedCommandNumber;
+        }
+
+        public void ClearTerminalCommandSelectedNumber()
+        {
+            _terminalCommandSelectedNumber = null;
         }
 
         public IList<TerminalCommand> GetPreviousTerminalCommands()

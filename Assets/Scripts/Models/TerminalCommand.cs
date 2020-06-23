@@ -2,6 +2,8 @@
 {
     public class TerminalCommand
     {
+        public uint TerminalCommandNumber { get; set; }
+
         public string TerminalCommandInput { get; set; }
 
         public string TerminalCommandOutput { get; set; }

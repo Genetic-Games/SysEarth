@@ -1,6 +1,7 @@
 ﻿using SysEarth.Models;
 using SysEarth.States;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,11 +17,82 @@ namespace SysEarth.Controllers
 
         // TODO - Consider the case where a "cursor" is implemented, allowing deletion / modification at various places in the string and having to keep track of placement
 
-        // TODO - Should also consider the case of up arrow and down arrow to go back to previous inputs
-
-        public UserInteraction GetUserInteraction(string userInputString, TerminalState terminalState)
+        public UserInteraction GetUserInteraction(string userInputString, bool isUpArrowPressed, bool isDownArrowPressed, TerminalState terminalState)
         {
+            // Make sure we actually have a user interaction to deal with this frame - if not, short circuit and just return
             var userInteraction = new UserInteraction();
+            if (string.IsNullOrEmpty(userInputString) && !isUpArrowPressed && !isDownArrowPressed)
+            {
+                return userInteraction;
+            }
+
+            // First, check to see if the user hit the up arrow key to scroll through their last inputs
+            if (isUpArrowPressed)
+            {
+                var previousCommands = terminalState.GetPreviousTerminalCommands();
+                var currentSelectedCommandNumber = terminalState.GetTerminalCommandSelectedNumber();
+
+                var selectedCommand = GetPreviousCommandWithArrowKeys(previousCommands, currentSelectedCommandNumber, isUpArrow: true);
+
+                // If, for whatever reason, we could not find the selected command for the user, do not try to change their input or do anything
+                if (selectedCommand == null)
+                {
+                    return userInteraction;
+                }
+
+                // Clear out and modify the user's current input, they want this replaced with a previous submitted input
+                terminalState.ClearCurrentInput();
+                var isSetInputSuccess = terminalState.TrySetCurrentInput(selectedCommand.TerminalCommandInput);
+
+                if (isSetInputSuccess)
+                {
+                    userInteraction.IsInputModified = true;
+                    userInteraction.ModifiedInput = selectedCommand.TerminalCommandInput;
+                    terminalState.SetTerminalCommandSelectedNumber(selectedCommand.TerminalCommandNumber);
+                }
+                else
+                {
+                    Debug.Assert(isSetInputSuccess, $"Failed to set current input: {selectedCommand.TerminalCommandInput}");
+                }
+
+                return userInteraction;
+            }
+
+            // Next, check to see if the user hit the down arrow key to scroll through their last inputs
+            if (isDownArrowPressed)
+            {
+                var previousCommands = terminalState.GetPreviousTerminalCommands();
+                var currentSelectedCommandNumber = terminalState.GetTerminalCommandSelectedNumber();
+
+                var selectedCommand = GetPreviousCommandWithArrowKeys(previousCommands, currentSelectedCommandNumber, isUpArrow: false);
+
+                // If, for whatever reason, we could not find the selected command for the user, do not try to change their input or do anything
+                if (selectedCommand == null)
+                {
+                    return userInteraction;
+                }
+
+                // Clear out and modify the user's current input, they want this replaced with a previous submitted input
+                terminalState.ClearCurrentInput();
+                var isSetInputSuccess = terminalState.TrySetCurrentInput(selectedCommand.TerminalCommandInput);
+
+                if (isSetInputSuccess)
+                {
+                    userInteraction.IsInputModified = true;
+                    userInteraction.ModifiedInput = selectedCommand.TerminalCommandInput;
+                    terminalState.SetTerminalCommandSelectedNumber(selectedCommand.TerminalCommandNumber);
+                }
+                else
+                {
+                    Debug.Assert(isSetInputSuccess, $"Failed to set current input: {selectedCommand.TerminalCommandInput}");
+                }
+
+                return userInteraction;
+            }
+
+            // If the user starts typing, we know they did not try to find a previous command (or are modifying a previous one)
+            // At that point, remove any command that may have been selected and treat this as a brand new input case
+            terminalState.ClearTerminalCommandSelectedNumber();
 
             // Parse which characters the user's have pressed
             foreach (char userInputCharacter in userInputString)
@@ -90,6 +162,41 @@ namespace SysEarth.Controllers
             }
 
             return userInteraction;
+        }
+
+        private TerminalCommand GetPreviousCommandWithArrowKeys(
+            IList<TerminalCommand> previousCommands, 
+            ulong? currentSelectedCommandNumber,
+            bool isUpArrow = true)
+        {
+            // This is the first time the user is scrolling through submitted entries to find a previous one (cannot start with down)
+            if (currentSelectedCommandNumber == null && isUpArrow)
+            {
+                return previousCommands.OrderByDescending(command => command.TerminalCommandNumber).FirstOrDefault();
+            }
+
+            // Check to see if we are already in the process of scrolling through previous commands (one has already been selected)
+            else if (currentSelectedCommandNumber != null && isUpArrow)
+            {
+                // If user hit the up arrow, that means that they want the previous command submitted before the one they are currently on
+                // Counter-intuitive, but that means they want a lower command number (it was entered earlier, so has a lower number)
+                return previousCommands
+                    .Where(command => command.TerminalCommandNumber < currentSelectedCommandNumber)
+                    .OrderByDescending(command => command.TerminalCommandNumber)
+                    .FirstOrDefault();
+            }
+
+            else if (currentSelectedCommandNumber != null && !isUpArrow)
+            {
+                // If user hit the down arrow, that means they want the next command submitted after the one they are currently on
+                // Counter-intuitive, but that means they want a higher command number (it was entered later, so has a higher number)
+                return previousCommands
+                    .Where(command => command.TerminalCommandNumber > currentSelectedCommandNumber)
+                    .OrderBy(command => command.TerminalCommandNumber)
+                    .FirstOrDefault();
+            }
+
+            return null;
         }
 
         public void SetUserInterfaceText(Text textObject, string updatedText, bool addPrompt = false)

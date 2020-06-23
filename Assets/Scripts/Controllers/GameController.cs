@@ -80,8 +80,9 @@ namespace SysEarth.Controllers
         public void Update()
         {
             // First, figure out if the user has done anything to modify the input
-            // TODO - Should also consider the case of up arrow and down arrow to go back to previous inputs (which cannot be handled by Input.inputString)
-            var userInteraction = _userInterfaceController.GetUserInteraction(Input.inputString, _terminalState);
+            var isUpArrowPressed = Input.GetKeyDown(KeyCode.UpArrow);
+            var isDownArrowPressed = Input.GetKeyDown(KeyCode.DownArrow);
+            var userInteraction = _userInterfaceController.GetUserInteraction(Input.inputString, isUpArrowPressed, isDownArrowPressed, _terminalState);
 
             // If the user has modified input, make sure that is reflected back in the UI
             if (userInteraction.IsInputModified)
@@ -127,12 +128,15 @@ namespace SysEarth.Controllers
                 userInteraction.IsOutputModified = true;
                 var terminalCommand = new TerminalCommand
                 {
+                    TerminalCommandNumber = _terminalState.GetTerminalCommandSubmissionNumber(),
                     TerminalCommandInput = userInteraction.SubmittedInput,
                     TerminalCommandOutput = userInteractionResponse.ToString(),
 
                     // If the command was a valid `clear` command, we do not want to show output for it, otherwise we do want output visible
                     IsVisibleInTerminal = command == null || command.GetType() != typeof(ClearCommand) || !command.TryValidateArguments(out _, args)
                 };
+
+                _terminalState.IncrementTerminalCommandSubmissionNumber();
 
                 // Add the input to the list of historical inputs if it is a valid input (not empty, null, or over the character limit)
                 if (_terminalState.TryValidateInput(userInteraction.SubmittedInput, out var validSubmittedInput))
