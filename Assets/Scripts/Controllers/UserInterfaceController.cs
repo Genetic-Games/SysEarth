@@ -13,7 +13,7 @@ namespace SysEarth.Controllers
         private readonly IList<char> _submitCharacters = new List<char> { '\r', '\n' };
         private readonly IList<char> _deleteCharacters = new List<char> { '\b' }; // Note - only backspace is supported by Input, delete is unsupported
 
-        private const string _userInputPrompt = "|> ";
+        private const string _userInputPrompt = "|>";
 
         // TODO - Consider the case where a "cursor" is implemented, allowing deletion / modification at various places in the string and having to keep track of placement
 
@@ -199,12 +199,21 @@ namespace SysEarth.Controllers
             return null;
         }
 
-        public void SetUserInterfaceText(Text textObject, string updatedText, bool addPrompt = false)
+        public void SetUserInterfaceTextWithInputPrompt(Text textObject, string updatedText, string currentDirectoryPath = null)
         {
             // If the updated text is null, that signifies there should be no update for the text to the user
             if (updatedText != null)
             {
-                textObject.text = addPrompt ? _userInputPrompt + updatedText : updatedText;
+                textObject.text = $"{currentDirectoryPath ?? string.Empty} {_userInputPrompt} {updatedText}";
+            }
+        }
+
+        public void SetUserInterfaceText(Text textObject, string updatedText)
+        {
+            // If the updated text is null, that signifies there should be no update for the text to the user
+            if (updatedText != null)
+            {
+                textObject.text = updatedText;
             }
         }
 
@@ -216,7 +225,7 @@ namespace SysEarth.Controllers
             {
                 if (terminalCommand.IsVisibleInTerminal)
                 {
-                    userInterfaceText.AppendLine(_userInputPrompt + terminalCommand.TerminalCommandInput);
+                    userInterfaceText.AppendLine($"{terminalCommand.TerminalCommandPath} {_userInputPrompt} {terminalCommand.TerminalCommandInput}");
                     userInterfaceText.AppendLine(terminalCommand.TerminalCommandOutput);
                     userInterfaceText.AppendLine(); // Empty line for better readability between each pair of input and output
                 }

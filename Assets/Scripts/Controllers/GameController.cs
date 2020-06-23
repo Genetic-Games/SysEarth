@@ -68,12 +68,28 @@ namespace SysEarth.Controllers
             _terminalStateInitializer.InitializeTerminalState(_terminalState, InputLengthCharacterLimit, InputHistoryLimit);
             _terminalStateInitializer.ClearTerminalState(_terminalState);
 
-            var commandsInitialized = _commandStateInitializer.InitializeCommandState(_commandState, _terminalState, _fileSystemState, _directoryController);
-            _fileSystemStateInitializer.InitializeFileSystemState(_fileSystemState, _permissionController, _directoryController);
-            _fileSystemStateInitializer.InitializeCommandsInFileSystemState(_fileSystemState, _permissionController, _directoryController, _fileController, commandsInitialized);
+            var commandsInitialized = _commandStateInitializer.InitializeCommandState(
+                _commandState, 
+                _terminalState, 
+                _fileSystemState, 
+                _directoryController);
+            _fileSystemStateInitializer.InitializeFileSystemState(
+                _fileSystemState, 
+                _permissionController, 
+                _directoryController);
+            _fileSystemStateInitializer.InitializeCommandsInFileSystemState(
+                _fileSystemState, 
+                _permissionController, 
+                _directoryController, 
+                _fileController, 
+                commandsInitialized);
 
-            _userInterfaceInitializer.InitializeConsoleText(_userInterfaceController, InputTextObject, addPrompt: true);
-            _userInterfaceInitializer.InitializeConsoleText(_userInterfaceController, OutputTextObject, addPrompt: false);
+            _userInterfaceInitializer.InitializeConsoleText(
+                _userInterfaceController, 
+                _fileSystemState, 
+                _directoryController, 
+                InputTextObject, 
+                OutputTextObject);
         }
 
         // Game Loop - Executed Once Per Frame
@@ -82,18 +98,14 @@ namespace SysEarth.Controllers
             // First, figure out if the user has done anything to modify the input
             var isUpArrowPressed = Input.GetKeyDown(KeyCode.UpArrow);
             var isDownArrowPressed = Input.GetKeyDown(KeyCode.DownArrow);
-            var userInteraction = _userInterfaceController.GetUserInteraction(Input.inputString, isUpArrowPressed, isDownArrowPressed, _terminalState);
-
-            // If the user has modified input, make sure that is reflected back in the UI
-            if (userInteraction.IsInputModified)
-            {
-                // TODO - Figure out how to show the user the current directory too as part of the input (before the prompt), like Bash does
-                _userInterfaceController.SetUserInterfaceText(InputTextObject, userInteraction.ModifiedInput, addPrompt: true);
-            }
+            var userInputString = Input.inputString;
+            var userInteraction = _userInterfaceController.GetUserInteraction(userInputString, isUpArrowPressed, isDownArrowPressed, _terminalState);
 
             // Next, if the user submitted input as part of their interactions, attempt to validate and execute what they submitted
             if (userInteraction.IsInputSubmitted)
             {
+                // Need to get the current directory before we execute the command since it could change the current directory
+                var currentDirectory = _fileSystemState.GetCurrentDirectory();
                 var userInteractionResponse = new StringBuilder();
 
                 // Since the user submitted input, we now need to parse that input
@@ -129,6 +141,7 @@ namespace SysEarth.Controllers
                 var terminalCommand = new TerminalCommand
                 {
                     TerminalCommandNumber = _terminalState.GetTerminalCommandSubmissionNumber(),
+                    TerminalCommandPath = _directoryController.GetDirectoryPath(currentDirectory),
                     TerminalCommandInput = userInteraction.SubmittedInput,
                     TerminalCommandOutput = userInteractionResponse.ToString(),
 
@@ -151,6 +164,15 @@ namespace SysEarth.Controllers
                 }
             }
 
+            // Next, if the user has modified input, make sure that is reflected back in the UI
+            if (userInteraction.IsInputModified)
+            {
+                // Grab the current directory after the command has executed, because the command could have changed the current directory
+                var currentDirectory = _fileSystemState.GetCurrentDirectory();
+                var currentDirectoryPath = _directoryController.GetDirectoryPath(currentDirectory);
+                _userInterfaceController.SetUserInterfaceTextWithInputPrompt(InputTextObject, userInteraction.ModifiedInput, currentDirectoryPath);
+            }
+
             // Finally, if the user's input requires a corresponding change in output, reflect that in the UI
             if (userInteraction.IsOutputModified)
             {
@@ -159,7 +181,7 @@ namespace SysEarth.Controllers
                 var previousTerminalCommands = _terminalState.GetPreviousTerminalCommands();
                 userInteraction.ModifiedOutput = _userInterfaceController.BuildUserInterfaceText(previousTerminalCommands);
 
-                _userInterfaceController.SetUserInterfaceText(OutputTextObject, userInteraction.ModifiedOutput, addPrompt: false);
+                _userInterfaceController.SetUserInterfaceText(OutputTextObject, userInteraction.ModifiedOutput);
             }
         }
     }

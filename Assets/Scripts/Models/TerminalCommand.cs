@@ -4,6 +4,8 @@
     {
         public uint TerminalCommandNumber { get; set; }
 
+        public string TerminalCommandPath { get; set; }
+
         public string TerminalCommandInput { get; set; }
 
         public string TerminalCommandOutput { get; set; }
