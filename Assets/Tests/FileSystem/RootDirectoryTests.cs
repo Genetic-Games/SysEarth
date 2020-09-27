@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using SysEarth.States;
+using System.Linq;
 
 namespace SysEarth.Tests.FileSystem
 {
@@ -10,6 +11,7 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
+
             Assert.IsNotNull(root);
         }
 
@@ -19,17 +21,19 @@ namespace SysEarth.Tests.FileSystem
             var state = new FileSystemState();
             var expected = "/";
             var root = state.GetRootDirectory();
+
             Assert.IsNotNull(root);
             Assert.AreEqual(root.Name, expected);
         }
 
         [Test]
-        public void NewStateRootDirectoryIsCurrentDirectory()
+        public void NewStateRootDirectoryIsNotCurrentDirectory()
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
             var current = state.GetCurrentDirectory();
-            Assert.AreEqual(root, current);
+
+            Assert.AreNotEqual(root, current);
         }
 
         [Test]
@@ -37,16 +41,20 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
+
             Assert.IsNull(root.ParentDirectory);
         }
 
         [Test]
-        public void RootDirectoryStartsWithNoSubDirectories()
+        public void RootDirectoryStartsWithHomeSubDirectory()
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
+
             Assert.IsNotNull(root.SubDirectories);
-            Assert.IsEmpty(root.SubDirectories);
+            Assert.IsNotEmpty(root.SubDirectories);
+            Assert.AreEqual(root.SubDirectories.Count, 1);
+            Assert.AreEqual(root.SubDirectories.FirstOrDefault().Name, "home");
         }
 
         [Test]
@@ -54,6 +62,7 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
+
             Assert.IsNotNull(root.FilesInDirectory);
             Assert.IsEmpty(root.FilesInDirectory);
         }

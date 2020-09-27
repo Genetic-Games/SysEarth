@@ -14,12 +14,12 @@ namespace SysEarth.Initializers
             DirectoryController directoryController)
         {
             // TODO - Make it so that all actions are permission based (add requires write access, so does delete, need read access to look at anything, execute to run something, etc)
-            var root = fileSystemState.GetRootDirectory();
+            var home = fileSystemState.GetHomeDirectory();
 
-            var homeDirectoryPermission = permissionController.GetCustomPermission(canRead: true, canExecute: true);
-            var isAddHomeDirectorySuccess = directoryController.TryAddDirectory("home", homeDirectoryPermission, root, out _);
+            var planetDirectoryPermission = permissionController.GetCustomPermission(canRead: true, canExecute: true);
+            var isAddPlanetDirectorySuccess = directoryController.TryAddDirectory("planets", planetDirectoryPermission, home, out _);
 
-            Debug.Assert(isAddHomeDirectorySuccess, $"Failed to add `home` directory under `{root.Name}` directory");
+            Debug.Assert(isAddPlanetDirectorySuccess, $"Failed to add `planets` directory under `{home.Name}` directory");
         }
 
         public void InitializeCommandsInFileSystemState(

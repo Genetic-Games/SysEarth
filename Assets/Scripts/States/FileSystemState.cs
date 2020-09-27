@@ -6,9 +6,10 @@ namespace SysEarth.States
     public class FileSystemState
     {
         private Directory _currentDirectory;
-        private Directory _rootDirectory;
+        private readonly Directory _rootDirectory;
+        private readonly Directory _homeDirectory;
 
-        public FileSystemState(Permission rootAccess = null)
+        public FileSystemState(Permission rootAccess = null, Permission homeAccess = null)
         {
             if (rootAccess == null)
             {
@@ -21,12 +22,32 @@ namespace SysEarth.States
                 Name = "/",
                 Access = rootAccess
             };
-            _currentDirectory = _rootDirectory;
+
+            if (homeAccess == null)
+            {
+                var permissionController = new PermissionController();
+                homeAccess = permissionController.GetCustomPermission(canRead: true, canExecute: true);
+            }
+
+            _homeDirectory = new Directory
+            {
+                Name = "home",
+                Access = homeAccess,
+                ParentDirectory = _rootDirectory
+            };
+
+            _rootDirectory.SubDirectories.Add(_homeDirectory);
+            _currentDirectory = _homeDirectory;
         }
 
         public Directory GetRootDirectory()
         {
             return _rootDirectory;
+        }
+
+        public Directory GetHomeDirectory()
+        {
+            return _homeDirectory;
         }
 
         public Directory GetCurrentDirectory()

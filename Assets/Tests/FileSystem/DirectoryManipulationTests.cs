@@ -17,13 +17,15 @@ namespace SysEarth.Tests.FileSystem
         }
 
         [Test]
-        public void SubDirectoriesDoNotExistUntilCreated()
+        public void HomeSubDirectoryExistsOnCreation()
         {
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
 
             Assert.IsNotNull(root.SubDirectories);
-            Assert.IsEmpty(root.SubDirectories);
+            Assert.IsNotEmpty(root.SubDirectories);
+            Assert.AreEqual(root.SubDirectories.Count, 1);
+            Assert.AreEqual(root.SubDirectories.FirstOrDefault().Name, "home");
         }
 
         [Test]
@@ -32,15 +34,9 @@ namespace SysEarth.Tests.FileSystem
             var state = new FileSystemState();
             var root = state.GetRootDirectory();
 
-            // Need to store the boolean we want to test directly rather than the state 
-            // This is because the underlying state will change but the reference pointer will not, leading to incorrect testing behavior
-            var isSubDirectoriesNullBeforeAdd = root.SubDirectories == null;
-            var isSubDirectoriesPopulatedBeforeAdd = root.SubDirectories.Any();
             var isAddDirectorySuccess = _directoryController.TryAddDirectory("Test", new Permission(), root, out var testDirectory);
 
             Assert.IsTrue(isAddDirectorySuccess);
-            Assert.IsFalse(isSubDirectoriesNullBeforeAdd);
-            Assert.IsFalse(isSubDirectoriesPopulatedBeforeAdd);
             Assert.IsNotNull(root.SubDirectories);
             Assert.That(root.SubDirectories.Contains(testDirectory));
         }

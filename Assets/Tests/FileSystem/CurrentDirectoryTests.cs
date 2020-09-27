@@ -2,6 +2,7 @@
 using SysEarth.Controllers;
 using SysEarth.Models;
 using SysEarth.States;
+using System.Linq;
 
 namespace SysEarth.Tests.FileSystem
 {
@@ -20,6 +21,7 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var current = state.GetCurrentDirectory();
+
             Assert.IsNotNull(current);
         }
 
@@ -28,6 +30,7 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var current = state.GetCurrentDirectory();
+
             Assert.IsNotNull(current.SubDirectories);
             Assert.IsEmpty(current.SubDirectories);
         }
@@ -37,16 +40,20 @@ namespace SysEarth.Tests.FileSystem
         {
             var state = new FileSystemState();
             var current = state.GetCurrentDirectory();
+
             Assert.IsNotNull(current.FilesInDirectory);
             Assert.IsEmpty(current.FilesInDirectory);
         }
 
         [Test]
-        public void CurrentDirectoryStartsWithNoParentDirectory()
+        public void CurrentDirectoryStartsWithRootParentDirectory()
         {
             var state = new FileSystemState();
             var current = state.GetCurrentDirectory();
-            Assert.IsNull(current.ParentDirectory);
+            var root = state.GetRootDirectory();
+
+            Assert.IsNotNull(current.ParentDirectory);
+            Assert.AreEqual(current.ParentDirectory, root);
         }
 
         [Test]
