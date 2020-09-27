@@ -84,7 +84,6 @@ namespace SysEarth.Controllers
             return current.SubDirectories.Remove(target);
         }
 
-        // TODO - Add tests for this directory path functionality
         public string GetDirectoryPath(Directory target)
         {
             if (target == null)
@@ -106,8 +105,15 @@ namespace SysEarth.Controllers
                 target = target.ParentDirectory;
             }
 
-            // Finish the path list by adding an "empty string" directory (which will materialize as root `/` when we join below)
-            directoryNames.Add(string.Empty);
+            // Add the top level directory name (the one without a parent), but if it is root, treat it as empty since path separators will handle it
+            if (target.Name == _rootDirectorySymbol)
+            {
+                directoryNames.Add(string.Empty);
+            }
+            else
+            {
+                directoryNames.Add(target.Name);
+            }
 
             // Spin the list around so it is in the larger to smaller direction (root to target, left to right)
             directoryNames.Reverse();
